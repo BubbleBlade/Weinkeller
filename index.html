@@ -1,1523 +1,662 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Weinkeller by Bubbleblade</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mein Weinkeller</title>
+    <meta name="theme-color" content="#722f37">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2738/2738808.png">
+    
+    <link rel="manifest" id="manifest-placeholder">
 
-  <meta name="theme-color" content="#121212" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Weinkeller" />
-  <meta name="description" content="Digitaler Weinkeller mit Bestandsverwaltung, Statistiken und KI-Etikett-Erkennung." />
+    <style>
+        :root {
+            --primary: #722f37;
+            --primary-dark: #4a1c23;
+            --bg: #f8f5f2;
+            --surface: #ffffff;
+            --text: #2c2c2c;
+            --border: #e0d8d0;
+            --accent: #d4af37;
+        }
 
-  <script>
-    (function setupPWAAssets() {
-      // Inline SVG App-Icon (Minimalistisches Weinglas-Design)
-      const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="512" fill="#121212"/><path d="M170 410h172M256 290v120M256 290a130 130 0 0 0 130-130c0-37-18-74-55-93H181c-37 19-55 56-55 93a130 130 0 0 0 130 130z" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`;
-      const iconDataUrl = "data:image/svg+xml;base64," + btoa(svgIcon);
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 80px; }
 
-      // Dynamic Manifest
-      const manifestObj = {
-        name: "Weinkeller by Bubbleblade",
-        short_name: "Weinkeller",
-        description: "Digitaler Weinkeller mit Bestandsverwaltung, Statistiken und KI-Etikett-Erkennung.",
-        start_url: "./",
-        display: "standalone",
-        background_color: "#121212",
-        theme_color: "#121212",
-        icons: [
-          { src: iconDataUrl, sizes: "192x192 512x512", type: "image/svg+xml", purpose: "any maskable" }
-        ]
-      };
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-      const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: "application/manifest+json" });
-      const manifestUrl = URL.createObjectURL(manifestBlob);
+        .container { max-width: 1000px; margin: 0 auto; padding: 1rem; }
 
-      const linkManifest = document.createElement("link");
-      linkManifest.rel = "manifest";
-      linkManifest.href = manifestUrl;
-      document.head.appendChild(linkManifest);
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn:hover { background: var(--primary-dark); }
+        .btn-secondary { background: #6c757d; }
+        .btn-accent { background: var(--accent); color: #000; }
+        .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.85rem; }
+        .btn-danger { background: #dc3545; }
 
-      const linkIcon = document.createElement("link");
-      linkIcon.rel = "apple-touch-icon";
-      linkIcon.href = iconDataUrl;
-      document.head.appendChild(linkIcon);
+        .card {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
 
-      const linkFavicon = document.createElement("link");
-      linkFavicon.rel = "icon";
-      linkFavicon.type = "image/svg+xml";
-      linkFavicon.href = iconDataUrl;
-      document.head.appendChild(linkFavicon);
-    })();
-  </script>
+        /* Nav Tabs */
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; background: #eee; padding: 0.3rem; border-radius: 8px; }
+        .tab-btn { flex: 1; padding: 0.6rem; border: none; background: transparent; cursor: pointer; border-radius: 6px; font-weight: bold; }
+        .tab-btn.active { background: var(--surface); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Permanent+Marker&display=swap" rel="stylesheet">
+        /* Formular Styles */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        label { font-size: 0.85rem; font-weight: bold; color: #555; }
+        input, select, textarea {
+            padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background: #fff;
+        }
 
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+        /* Wein-Karte in Liste */
+        .wine-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+        .wine-card { display: flex; gap: 1rem; position: relative; }
+        .wine-thumb { width: 90px; height: 120px; object-fit: cover; border-radius: 4px; background: #eee; flex-shrink: 0; }
+        .wine-details { flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .wine-title { font-size: 1.1rem; font-weight: bold; color: var(--primary); }
+        .wine-meta { font-size: 0.85rem; color: #666; margin: 0.2rem 0; }
+        .wine-badge { display: inline-block; background: #e9ecef; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .wine-actions { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; }
 
-  <style>
-    :root {
-      --bg-main: #121212;
-      --bg-card: #1E1E1E;
-      --bg-card-hover: #262626;
-      --bg-input: #1A1A1A;
-      --border-color: #2E2E2E;
-      --border-accent: #404040;
-      --text-main: #F5F5F5;
-      --text-muted: #8E8E93;
-      --text-subtle: #636366;
-      --accent-monochrome: #FFFFFF;
-      --accent-dim: #D1D1D6;
-      --danger: #FF6B6B;
-    }
+        .star-toggle {
+            position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; color: #ccc;
+        }
+        .star-toggle.active { color: var(--accent); }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+        /* Modal / Overlay */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; padding: 1rem; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 1.5rem; border-radius: 8px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; }
 
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--bg-main);
-      color: var(--text-main);
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      min-height: 100vh;
-      line-height: 1.5;
-    }
-
-    .graffiti-title {
-      font-family: 'Permanent Marker', cursive, sans-serif;
-      letter-spacing: 0.5px;
-      color: #FFFFFF;
-      text-shadow: 2px 2px 0px #000, -1px -1px 0px #333;
-      transform: rotate(-1.5deg);
-      display: inline-block;
-    }
-
-    .mono { font-family: 'JetBrains Mono', monospace; }
-
-    .flex { display: flex; }
-    .flex-col { flex-direction: column; }
-    .flex-wrap { flex-wrap: wrap; }
-    .items-center { align-items: center; }
-    .justify-between { justify-content: space-between; }
-    .justify-center { justify-content: center; }
-    .flex-1 { flex: 1; }
-    .gap-1 { gap: 4px; }
-    .gap-2 { gap: 8px; }
-    .gap-3 { gap: 12px; }
-    .gap-4 { gap: 16px; }
-    .w-full { width: 100%; }
-    .max-w-5xl { max-width: 1024px; margin-left: auto; margin-right: auto; }
-    .px-4 { padding-left: 16px; padding-right: 16px; }
-    .py-3 { padding-top: 12px; padding-bottom: 12px; }
-    .py-4 { padding-top: 16px; padding-bottom: 16px; }
-    .pt-4 { padding-top: 16px; }
-    .py-6 { padding-top: 24px; padding-bottom: 24px; }
-    .grid { display: grid; }
-    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-
-    input, select, textarea {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg-input);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 10px 12px;
-      color: var(--text-main);
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.15s ease;
-      width: 100%;
-    }
-    input:focus, select:focus, textarea:focus { border-color: var(--accent-monochrome); }
-    ::placeholder { color: var(--text-subtle); }
-
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg-main); }
-    ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 4px; }
-  </style>
+        .hidden { display: none !important; }
+    </style>
 </head>
 <body>
-  <div id="root"></div>
 
-  <script>
-    const e = React.createElement;
-    const { useState, useEffect, useRef, useMemo } = React;
+    <header>
+        <h1>🍷 Mein Weinkeller</h1>
+        <button class="btn btn-accent btn-sm" onclick="copyAiPrompt()">📋 KI-Prompt kopieren</button>
+    </header>
 
-    const STORAGE_KEY = "weinkeller_wines_v4";
-    const LOG_STORAGE_KEY = "weinkeller_log_v1";
+    <div class="container">
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('inventory')">Bestand</button>
+            <button class="tab-btn" onclick="switchTab('tasting')">🍷 Verkostung</button>
+            <button class="tab-btn" onclick="switchTab('add')">➕ Wein anlegen</button>
+            <button class="tab-btn" onclick="switchTab('settings')">⚙️ Daten / Orte</button>
+        </div>
 
-    const TYPE_COLORS = {
-      Rot: "#F5F5F5",
-      Weiß: "#D1D1D6",
-      Rosé: "#999999",
-      Schaumwein: "#777777",
-      Süßwein: "#555555",
-    };
-    const TYPES = Object.keys(TYPE_COLORS);
+        <div id="tab-inventory" class="tab-content">
+            <div class="card">
+                <h3>🔍 Filter & Suche</h3>
+                <div class="form-grid" style="margin-top: 0.5rem;">
+                    <div class="form-group">
+                        <input type="text" id="filter-search" placeholder="Suche (Name, Notizen...)" oninput="renderList()">
+                    </div>
+                    <div class="form-group">
+                        <select id="filter-location" onchange="renderList()"><option value="">Alle Lagerorte</option></select>
+                    </div>
+                    <div class="form-group">
+                        <select id="filter-type" onchange="renderList()"><option value="">Alle Weinarten</option></select>
+                    </div>
+                    <div class="form-group">
+                        <select id="filter-winery" onchange="renderList()"><option value="">Alle Weingüter</option></select>
+                    </div>
+                    <div class="form-group">
+                        <select id="filter-grape" onchange="renderList()"><option value="">Alle Rebsorten</option></select>
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="filter-year" placeholder="Jahrgang" oninput="renderList()">
+                    </div>
+                    <div class="form-group">
+                        <input type="number" id="filter-max-price" placeholder="Max. Preis (€)" oninput="renderList()">
+                    </div>
+                </div>
+            </div>
 
-    const CHART_PALETTE = ["#FFFFFF", "#D1D1D6", "#A9A9AE", "#8E8E93", "#707075", "#54545A", "#3E3E43", "#2A2A2E"];
+            <div class="wine-grid" id="wine-container"></div>
+        </div>
 
-    const PRICE_BUCKETS = [
-      { label: "< 10 €", min: 0, max: 10 },
-      { label: "10–20 €", min: 10, max: 20 },
-      { label: "20–30 €", min: 20, max: 30 },
-      { label: "30–50 €", min: 30, max: 50 },
-      { label: "50–100 €", min: 50, max: 100 },
-      { label: "100 €+", min: 100, max: Infinity },
-    ];
+        <div id="tab-tasting" class="tab-content hidden">
+            <h2>🍷 Weine für die nächste Verkostung</h2>
+            <p style="margin-bottom: 1rem; color: #666;">Hier werden alle Weine angezeigt, die du mit dem Stern markiert hast.</p>
+            <div class="wine-grid" id="tasting-container"></div>
+        </div>
 
-    const SORT_FIELDS = [
-      { value: "neueste", label: "Neueste" },
-      { value: "name", label: "Name" },
-      { value: "winzer", label: "Winzer" },
-      { value: "jahrgang", label: "Jahrgang" },
-      { value: "region", label: "Region" },
-      { value: "vineyard", label: "Weinbergslage" },
-      { value: "land", label: "Land" },
-      { value: "grape", label: "Rebsorte" },
-      { value: "bewertung", label: "Bewertung" },
-      { value: "preis", label: "Preis" },
-      { value: "bestand", label: "Bestand" },
-      { value: "lagerort", label: "Lagerort" },
-    ];
+        <div id="tab-add" class="tab-content hidden">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 id="form-title">Neuen Wein anlegen</h2>
+                    <button class="btn btn-secondary btn-sm" onclick="pasteFromClipboard()">📋 Aus Zwischenablage einfügen</button>
+                </div>
 
-    const AI_PROMPT_TEXT = `Du hilfst mir, einen Wein in meine Weinkeller-App einzutragen. Ich gebe dir gleich ein Foto des Weinetiketts und/oder eine Textbeschreibung.
+                <form id="wine-form" onsubmit="saveWine(event)">
+                    <input type="hidden" id="wine-id">
+                    
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label>Name des Weins *</label>
+                            <input type="text" id="field-name" required placeholder="z.B. Barolo Riserva">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Weingut / Erzeuger</label>
+                            <input type="text" id="field-winery" list="dl-winery" placeholder="z.B. Antinori">
+                            <datalist id="dl-winery"></datalist>
+                        </div>
 
-Deine Aufgabe: Erkenne alle Informationen zu diesem Wein und antworte NUR mit einem einzigen validen JSON-Objekt nach dem folgenden Schema. Ich kopiere deine gesamte Antwort direkt in die Zwischenablage meines Handys und füge sie unverändert in meine App ein, die die Zwischenablage automatisch als JSON einliest – deshalb ist es entscheidend, dass in deiner Antwort NICHTS außer dem JSON steht:
-- Keine Einleitung, kein Kommentar, kein Fazit, keine Erklärung.
-- Kein Markdown, keine Codeblock-Zeichen (kein \`\`\`json und kein \`\`\`).
-- Nur die reine JSON-Struktur, beginnend mit { und endend mit }.
+                        <div class="form-group">
+                            <label>Weinart</label>
+                            <input type="text" id="field-type" list="dl-type" placeholder="z.B. Rotwein, Weißwein, Schaumwein">
+                            <datalist id="dl-type"></datalist>
+                        </div>
 
-Schema (genau diese Feldnamen verwenden):
+                        <div class="form-group">
+                            <label>Rebsorte(n)</label>
+                            <input type="text" id="field-grape" list="dl-grape" placeholder="z.B. Nebbiolo, Riesling">
+                            <datalist id="dl-grape"></datalist>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Jahrgang</label>
+                            <input type="number" id="field-year" placeholder="z.B. 2018">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Lagerort</label>
+                            <select id="field-location"></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Flaschen-Anzahl</label>
+                            <input type="number" id="field-quantity" value="1" min="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Preis (€)</label>
+                            <input type="number" step="0.01" id="field-price" placeholder="19.90">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Trinkreif bis / Genussfenster</label>
+                            <input type="text" id="field-drinkable" placeholder="z.B. 2025 - 2030">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>Etikett-Foto / Thumbnail</label>
+                            <input type="file" id="field-image" accept="image/*" onchange="handleImageUpload(event)">
+                            <input type="hidden" id="field-image-base64">
+                            <div id="image-preview" style="margin-top: 0.5rem;"></div>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label>Notizen / Geschmacksprofil</label>
+                            <textarea id="field-notes" rows="3" placeholder="Aromen, Speiseempfehlung, Herkunft..."></textarea>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                        <button type="submit" class="btn">Speichern</button>
+                        <button type="button" class="btn btn-secondary" onclick="resetForm(); switchTab('inventory')">Abbrechen</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="tab-settings" class="tab-content hidden">
+            <div class="card">
+                <h3>📍 Lagerorte verwalten</h3>
+                <div style="display: flex; gap: 0.5rem; margin: 1rem 0;">
+                    <input type="text" id="new-location-input" placeholder="Neuer Lagerort (z.B. Regal A, Fach 2)">
+                    <button class="btn" onclick="addLocation()">Hinzufügen</button>
+                </div>
+                <ul id="location-list" style="list-style: none;"></ul>
+            </div>
+
+            <div class="card">
+                <h3>💾 Daten Export / Import</h3>
+                <p style="margin-bottom: 1rem; font-size: 0.9rem; color: #666;">Exportiere deine Daten als JSON-Datei zur Sicherung oder um sie auf einem anderen Gerät zu laden.</p>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-secondary" onclick="exportData()">📥 Exportieren (JSON)</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">📤 Importieren</button>
+                    <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(event)">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- APPLIKATION ZUSTAND & INITIALISIERUNG ---
+        let wines = JSON.parse(localStorage.getItem('my_wines')) || [];
+        let locations = JSON.parse(localStorage.getItem('my_wine_locations')) || ['Hauptkeller', 'Kühlschrank', 'Regal A'];
+
+        const AI_PROMPT_TEXT = `Erstelle aus dem Foto dieses Weinetiketts ein JSON-Objekt für meine Weinkeller-App. Gib AUSSCHLIESSLICH das reine JSON im folgenden Format zurück, ohne Markdown-Codeblöcke oder zusätzlichen Text:
 {
-  "name": "Name des Weins (ohne Weingut und Jahrgang)",
-  "winery": "Weingut / Erzeuger / Winzer",
-  "vintage": "Jahrgang als Zahl, z.B. 2020 (leer lassen falls unbekannt)",
-  "region": "Anbaugebiet, z.B. Pfalz, Rioja, Burgund",
-  "vineyard": "Einzellage falls angegeben, sonst leerer String",
-  "country": "Herkunftsland",
-  "grape": "Rebsorte(n), bei mehreren durch Komma getrennt",
-  "type": "einer von: Rot, Weiß, Rosé, Schaumwein, Süßwein",
-  "quantity": 1,
-  "location": "",
-  "rating": 0,
-  "price": "geschätzter oder erkannter Preis in Euro als Zahl ohne Währungszeichen, leer falls unbekannt",
-  "notes": "kurze, prägnante Beschreibung: Charakter, typische Aromen, ggf. Trinkreife/Lagerpotenzial"
-}
+  "name": "Name des Weins",
+  "winery": "Weingut / Erzeuger",
+  "type": "Rotwein oder Weißwein oder Schaumwein oder Rosé",
+  "grape": "Rebsorte(n)",
+  "year": 2020,
+  "price": 0.00,
+  "drinkable": "z.B. 2024-2030",
+  "notes": "Kurze Notizen / Aromen"
+}`;
 
-Regeln:
-- Wenn ein Feld nicht sicher zu ermitteln ist, lass es leer ("") statt zu raten – außer bei "type", da wähle die wahrscheinlichste Option.
-- "quantity" ist immer 1, außer ich nenne eine andere Flaschenzahl.
-- "rating" ist immer 0, außer ich gebe dir explizit eine Bewertung.
-- Antworte auf Deutsch, aber ausschließlich mit dem JSON – keine weiteren Worte davor oder danach.`;
-
-    const emptyWine = () => ({
-      id: crypto.randomUUID(),
-      name: "",
-      winery: "",
-      vintage: "",
-      region: "",
-      vineyard: "",
-      country: "",
-      grape: "",
-      type: "Rot",
-      quantity: 1,
-      consumed: 0,
-      location: "",
-      rating: 0,
-      price: "",
-      purchaseDate: "",
-      notes: "",
-      image: null,
-      createdAt: Date.now(),
-    });
-
-    function loadWines() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (err) {
-        console.error("Laden fehlgeschlagen", err);
-        return [];
-      }
-    }
-
-    function saveWines(wines) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(wines));
-        return true;
-      } catch (err) {
-        console.error("Speichern fehlgeschlagen", err);
-        return false;
-      }
-    }
-
-    function loadLog() {
-      try {
-        const raw = localStorage.getItem(LOG_STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (err) {
-        console.error("Trinkprotokoll laden fehlgeschlagen", err);
-        return [];
-      }
-    }
-
-    function saveLog(log) {
-      try {
-        localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(log));
-        return true;
-      } catch (err) {
-        console.error("Trinkprotokoll speichern fehlgeschlagen", err);
-        return false;
-      }
-    }
-
-    function dateStamp() {
-      const d = new Date();
-      const jj = String(d.getFullYear()).slice(-2);
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const tt = String(d.getDate()).padStart(2, "0");
-      return jj + mm + tt;
-    }
-
-    function formatLogDate(ts) {
-      const d = new Date(ts);
-      return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) +
-        " · " + d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-    }
-
-    function resizeImage(file, maxDim = 360, quality = 0.6) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            let width = img.width;
-            let height = img.height;
-            if (width > height && width > maxDim) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else if (height > maxDim) {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-            const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL("image/jpeg", quality));
-          };
-          img.onerror = reject;
-          img.src = event.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function polarToCartesian(cx, cy, r, angleDeg) {
-      const angleRad = ((angleDeg - 90) * Math.PI) / 180;
-      return { x: cx + r * Math.cos(angleRad), y: cy + r * Math.sin(angleRad) };
-    }
-
-    function describeArcSlice(cx, cy, r, startAngle, endAngle) {
-      const start = polarToCartesian(cx, cy, r, endAngle);
-      const end = polarToCartesian(cx, cy, r, startAngle);
-      const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-      return ["M", cx, cy, "L", start.x, start.y, "A", r, r, 0, largeArcFlag, 0, end.x, end.y, "Z"].join(" ");
-    }
-
-    function buildDistribution(wines, keyFn, valueFn, limit = 7) {
-      const map = new Map();
-      wines.forEach((w) => {
-        const key = (keyFn(w) || "").trim() || "Unbekannt";
-        const val = valueFn(w);
-        if (val <= 0) return;
-        map.set(key, (map.get(key) || 0) + val);
-      });
-      let entries = Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
-      if (entries.length > limit) {
-        const head = entries.slice(0, limit);
-        const restSum = entries.slice(limit).reduce((acc, [, v]) => acc + v, 0);
-        entries = restSum > 0 ? [...head, ["Sonstige", restSum]] : head;
-      }
-      return entries.map(([label, value], i) => ({
-        label,
-        value,
-        color: CHART_PALETTE[i % CHART_PALETTE.length],
-      }));
-    }
-
-    function PieChart({ data, size = 170 }) {
-      const total = data.reduce((acc, d) => acc + d.value, 0);
-      const r = size / 2;
-      let cumulative = 0;
-
-      if (total === 0) {
-        return e("div", {
-          style: {
-            width: size, height: size, borderRadius: "50%",
-            border: "1px dashed var(--border-accent)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "var(--text-subtle)", fontSize: 12, flexShrink: 0
-          }
-        }, "Keine Daten");
-      }
-
-      const slices = data.map((d) => {
-        const startAngle = (cumulative / total) * 360;
-        cumulative += d.value;
-        const endAngle = (cumulative / total) * 360;
-        return { ...d, startAngle, endAngle };
-      });
-
-      return e("svg", { width: size, height: size, viewBox: `0 0 ${size} ${size}`, style: { flexShrink: 0 } },
-        slices.map((s, i) =>
-          s.endAngle - s.startAngle >= 359.9
-            ? e("circle", { key: i, cx: r, cy: r, r: r, fill: s.color })
-            : e("path", {
-                key: i,
-                d: describeArcSlice(r, r, r, s.startAngle, s.endAngle),
-                fill: s.color,
-                stroke: "var(--bg-card)",
-                strokeWidth: 1.5,
-              })
-        )
-      );
-    }
-
-    function ChartLegend({ data }) {
-      const total = data.reduce((acc, d) => acc + d.value, 0);
-      return e("div", { className: "flex flex-col gap-2", style: { flex: 1, minWidth: 140 } },
-        data.length === 0
-          ? e("p", { style: { fontSize: 12, color: "var(--text-subtle)" } }, "Keine Daten vorhanden.")
-          : data.map((d, i) =>
-            e("div", { key: i, className: "flex items-center justify-between gap-2", style: { fontSize: 12 } },
-              e("div", { className: "flex items-center gap-2", style: { minWidth: 0 } },
-                e("span", { style: { width: 10, height: 10, borderRadius: 3, background: d.color, flexShrink: 0 } }),
-                e("span", { style: { color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, d.label)
-              ),
-              e("span", { className: "mono", style: { color: "var(--text-muted)", flexShrink: 0 } },
-                `${d.value} · ${total ? Math.round((d.value / total) * 100) : 0}%`
-              )
-            )
-          )
-      );
-    }
-
-    function StatBlock({ title, data }) {
-      return e("div", {
-        style: {
-          background: "var(--bg-card)", border: "1px solid var(--border-color)",
-          borderRadius: 12, padding: 16
-        }
-      },
-        e("h3", { style: { fontSize: 13, fontWeight: 600, marginBottom: 14, textTransform: "uppercase", letterSpacing: 0.4, color: "var(--text-muted)" } }, title),
-        e("div", { className: "flex items-center gap-4 flex-wrap" },
-          e(PieChart, { data }),
-          e(ChartLegend, { data })
-        )
-      );
-    }
-
-    function BarChartBlock({ title, data }) {
-      const max = Math.max(1, ...data.map((d) => d.value));
-      return e("div", {
-        style: {
-          background: "var(--bg-card)", border: "1px solid var(--border-color)",
-          borderRadius: 12, padding: 16
-        }
-      },
-        e("h3", { style: { fontSize: 13, fontWeight: 600, marginBottom: 14, textTransform: "uppercase", letterSpacing: 0.4, color: "var(--text-muted)" } }, title),
-        e("div", { className: "flex flex-col gap-3" },
-          data.map((d, i) =>
-            e("div", { key: i },
-              e("div", { className: "flex justify-between", style: { fontSize: 12, marginBottom: 4 } },
-                e("span", null, d.label),
-                e("span", { className: "mono", style: { color: "var(--text-muted)" } }, d.value)
-              ),
-              e("div", { style: { background: "var(--bg-input)", borderRadius: 6, height: 8, overflow: "hidden" } },
-                e("div", { style: { width: `${(d.value / max) * 100}%`, height: "100%", background: "#FFFFFF", borderRadius: 6 } })
-              )
-            )
-          )
-        )
-      );
-    }
-
-    function Icon({ path, size = 18, color = "currentColor" }) {
-      return e("svg", {
-        width: size, height: size, viewBox: "0 0 24 24", fill: "none",
-        stroke: color, strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round",
-        style: { display: "inline-block", verticalAlign: "middle" }
-      }, path);
-    }
-
-    const Icons = {
-      Wine: (p) => e(Icon, { ...p, path: [
-        e("path", { key: 1, d: "M8 22h8" }),
-        e("path", { key: 2, d: "M12 15v7" }),
-        e("path", { key: 3, d: "M12 15a7 7 0 0 0 7-7c0-2-1-4-3-5H8C6 4 5 6 5 8a7 7 0 0 0 7 7z" })
-      ]}),
-      Plus: (p) => e(Icon, { ...p, path: [
-        e("line", { key: 1, x1: "12", y1: "5", x2: "12", y2: "19" }),
-        e("line", { key: 2, x1: "5", y1: "12", x2: "19", y2: "12" })
-      ]}),
-      X: (p) => e(Icon, { ...p, path: [
-        e("line", { key: 1, x1: "18", y1: "6", x2: "6", y2: "18" }),
-        e("line", { key: 2, x1: "6", y1: "6", x2: "18", y2: "18" })
-      ]}),
-      Star: ({ fill = "none", ...p }) => e(Icon, { ...p, path: [
-        e("polygon", { key: 1, points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2", fill: fill })
-      ]}),
-      Camera: (p) => e(Icon, { ...p, path: [
-        e("path", { key: 1, d: "M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" }),
-        e("circle", { key: 2, cx: "12", cy: "13", r: "4" })
-      ]}),
-      Upload: (p) => e(Icon, { ...p, path: [
-        e("path", { key: 1, d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }),
-        e("polyline", { key: 2, points: "17 8 12 3 7 8" }),
-        e("line", { key: 3, x1: "12", y1: "3", x2: "12", y2: "15" })
-      ]}),
-      Search: (p) => e(Icon, { ...p, path: [
-        e("circle", { key: 1, cx: "11", cy: "11", r: "8" }),
-        e("line", { key: 2, x1: "21", y1: "21", x2: "16.65", y2: "16.65" })
-      ]}),
-      Save: (p) => e(Icon, { ...p, path: [
-        e("path", { key: 1, d: "M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" }),
-        e("polyline", { key: 2, points: "17 21 17 13 7 13 7 21" }),
-        e("polyline", { key: 3, points: "7 3 7 8 15 8" })
-      ]}),
-      FolderInput: (p) => e(Icon, { ...p, path: [
-        e("path", { key: 1, d: "M2 9V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2" }),
-        e("line", { key: 2, x1: "2", y1: "13", x2: "13", y2: "13" }),
-        e("polyline", { key: 3, points: "9 9 13 13 9 17" })
-      ]}),
-      Trash2: (p) => e(Icon, { ...p, path: [
-        e("polyline", { key: 1, points: "3 6 5 6 21 6" }),
-        e("path", { key: 2, d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" }),
-        e("line", { key: 3, x1: "10", y1: "11", x2: "10", y2: "17" }),
-        e("line", { key: 4, x1: "14", y1: "11", x2: "14", y2: "17" })
-      ]}),
-      LayoutGrid: (p) => e(Icon, { ...p, path: [
-        e("rect", { key: 1, x: "3", y: "3", width: "7", height: "7" }),
-        e("rect", { key: 2, x: "14", y: "3", width: "7", height: "7" }),
-        e("rect", { key: 3, x: "14", y: "14", width: "7", height: "7" }),
-        e("rect", { key: 4, x: "3", y: "14", width: "7", height: "7" })
-      ]}),
-      Rows3: (p) => e(Icon, { ...p, path: [
-        e("rect", { key: 1, x: "3", y: "3", width: "18", height: "4", rx: "1" }),
-        e("rect", { key: 2, x: "3", y: "10", width: "18", height: "4", rx: "1" }),
-        e("rect", { key: 3, x: "3", y: "17", width: "18", height: "4", rx: "1" })
-      ]}),
-      MapPin: (p) => e(Icon, { ...p, path: [
-        e("path", { key: 1, d: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" }),
-        e("circle", { key: 2, cx: "12", cy: "10", r: "3" })
-      ]}),
-      Check: (p) => e(Icon, { ...p, path: [
-        e("polyline", { key: 1, points: "20 6 9 17 4 12" })
-      ]}),
-      ClipboardPaste: (p) => e(Icon, { ...p, path: [
-        e("path", { key: 1, d: "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" }),
-        e("rect", { key: 2, x: "8", y: "2", width: "8", height: "4", rx: "1", ry: "1" }),
-        e("path", { key: 3, d: "M11 14h6" }),
-        e("path", { key: 4, d: "M14 11v6" })
-      ]}),
-      Copy: (p) => e(Icon, { ...p, path: [
-        e("rect", { key: 1, x: "9", y: "9", width: "13", height: "13", rx: "2", ry: "2" }),
-        e("path", { key: 2, d: "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" })
-      ]}),
-      PieChart: (p) => e(Icon, { ...p, path: [
-        e("path", { key: 1, d: "M21.21 15.89A10 10 0 1 1 8 2.83" }),
-        e("path", { key: 2, d: "M22 12A10 10 0 0 0 12 2v10z" })
-      ]}),
-      ArrowLeft: (p) => e(Icon, { ...p, path: [
-        e("line", { key: 1, x1: "19", y1: "12", x2: "5", y2: "12" }),
-        e("polyline", { key: 2, points: "12 19 5 12 12 5" })
-      ]}),
-      Filter: (p) => e(Icon, { ...p, path: [
-        e("polygon", { key: 1, points: "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" })
-      ]}),
-      SortDesc: (p) => e(Icon, { ...p, path: [
-        e("path", { key: 1, d: "M11 5h10" }), e("path", { key: 2, d: "M11 9h7" }),
-        e("path", { key: 3, d: "M11 13h4" }), e("path", { key: 4, d: "m3 17 3 3 3-3" }),
-        e("path", { key: 5, d: "M6 18V4" })
-      ]}),
-    };
-
-    function Stars({ value = 0, onChange, size = 16, readOnly = false }) {
-      return e("div", { className: "flex items-center gap-1", onClick: (ev) => ev.stopPropagation() },
-        [1, 2, 3, 4, 5].map((n) =>
-          e("button", {
-            key: n, type: "button", disabled: readOnly,
-            onClick: (ev) => {
-              ev.preventDefault(); ev.stopPropagation();
-              if (!readOnly && onChange) onChange(n === value ? 0 : n);
-            },
-            style: { cursor: readOnly ? "default" : "pointer", background: "none", border: "none", padding: 0 }
-          },
-          e(Icons.Star, { size, fill: n <= value ? "#FFFFFF" : "none", color: n <= value ? "#FFFFFF" : "#555555" }))
-        )
-      );
-    }
-
-    function Field({ label, children }) {
-      return e("label", { style: { display: "block" } },
-        e("span", { style: { fontSize: 12, color: "var(--text-muted)", marginBottom: 4, display: "block" } }, label),
-        children
-      );
-    }
-
-    function SuggestInput({ value, onChange, options, placeholder, listId, type = "text" }) {
-      return e(React.Fragment, null,
-        e("input", {
-          type, value: value || "", onChange: (ev) => onChange(ev.target.value),
-          placeholder, list: options && options.length ? listId : undefined, autoComplete: "off"
-        }),
-        options && options.length > 0 && e("datalist", { id: listId },
-          options.map((o) => e("option", { key: o, value: o }))
-        )
-      );
-    }
-
-    const btnBase = {
-      borderRadius: "8px", padding: "8px 12px", fontSize: "13px", fontWeight: "500",
-      cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px",
-      border: "1px solid var(--border-color)", background: "var(--bg-card)", color: "var(--text-main)",
-      transition: "all 0.15s ease"
-    };
-
-    const btnPrimary = { ...btnBase, background: "#FFFFFF", color: "#000000", borderColor: "#FFFFFF", fontWeight: "600" };
-    const btnDanger = { ...btnBase, color: "var(--danger)", borderColor: "#4a2a2a" };
-
-    function WeinkellerApp() {
-      const [wines, setWines] = useState(loadWines);
-      const [page, setPage] = useState("main");
-      const [query, setQuery] = useState("");
-      
-      const [nameFilter, setNameFilter] = useState("Alle");
-      const [wineryFilter, setWineryFilter] = useState("Alle");
-      const [vintageFilter, setVintageFilter] = useState("Alle");
-      const [regionFilter, setRegionFilter] = useState("Alle");
-      const [vineyardFilter, setVineyardFilter] = useState("Alle");
-      const [countryFilter, setCountryFilter] = useState("Alle");
-      const [grapeFilter, setGrapeFilter] = useState("Alle");
-      const [typeFilter, setTypeFilter] = useState("Alle");
-      const [locFilter, setLocFilter] = useState("Alle");
-      const [ratingFilter, setRatingFilter] = useState("Alle");
-      const [priceFilter, setPriceFilter] = useState("Alle");
-      const [qtyFilter, setQtyFilter] = useState("Alle");
-
-      const [showFilters, setShowFilters] = useState(false);
-      const [sortBy, setSortBy] = useState("neueste");
-      const [sortDir, setSortDir] = useState("desc");
-      const [view, setView] = useState("grid");
-      const [editing, setEditing] = useState(null);
-      const [showModal, setShowModal] = useState(false);
-      const [statusMsg, setStatusMsg] = useState("");
-      const [pendingImport, setPendingImport] = useState(null);
-      const [consumptionLog, setConsumptionLog] = useState(loadLog);
-
-      const fileInputCam = useRef(null);
-      const fileInputUpload = useRef(null);
-      const fallbackLoadRef = useRef(null);
-
-      useEffect(() => {
-        const ok = saveWines(wines);
-        if (!ok) {
-          flashStatus("⚠️ Speichern fehlgeschlagen (Speicher evtl. voll). Bitte Daten exportieren!");
-        }
-      }, [wines]);
-
-      useEffect(() => {
-        saveLog(consumptionLog);
-      }, [consumptionLog]);
-
-      function flashStatus(msg) {
-        setStatusMsg(msg);
-        setTimeout(() => setStatusMsg(""), 3500);
-      }
-
-      function drinkBottle(id, ev) {
-        if (ev) ev.stopPropagation();
-        const wine = wines.find((w) => w.id === id);
-        if (!wine || wine.quantity <= 0) return;
-        setWines((prev) =>
-          prev.map((w) => (w.id === id && w.quantity > 0
-            ? { ...w, quantity: w.quantity - 1, consumed: (w.consumed || 0) + 1 }
-            : w))
-        );
-        setConsumptionLog((prev) => [
-          {
-            id: crypto.randomUUID(),
-            wineId: wine.id,
-            name: wine.name,
-            winery: wine.winery,
-            vintage: wine.vintage,
-            type: wine.type,
-            openedAt: Date.now(),
-          },
-          ...prev,
-        ]);
-        flashStatus("Flasche ausgetrunken 🍷");
-      }
-
-      function refillBottle(id, ev) {
-        if (ev) ev.stopPropagation();
-        setWines((prev) => prev.map((w) => (w.id === id ? { ...w, quantity: w.quantity + 1 } : w)));
-        flashStatus("1 Flasche nachgefüllt 🍾");
-      }
-
-      function undoLogEntry(entry) {
-        if (!confirm(`"${entry.name}" wieder als ungetrunken markieren?`)) return;
-        setConsumptionLog((prev) => prev.filter((l) => l.id !== entry.id));
-        setWines((prev) =>
-          prev.map((w) =>
-            w.id === entry.wineId
-              ? { ...w, quantity: (w.quantity || 0) + 1, consumed: Math.max(0, (w.consumed || 0) - 1) }
-              : w
-          )
-        );
-        flashStatus("Rückgängig gemacht.");
-      }
-
-      async function handleExportJSON() {
-        const filename = `${dateStamp()}_Weinkeller_Backup.json`;
-        const jsonString = JSON.stringify(wines, null, 2);
-
-        if ('showSaveFilePicker' in window) {
-          try {
-            const handle = await window.showSaveFilePicker({
-              suggestedName: filename,
-              types: [{ description: 'JSON Datei', accept: { 'application/json': ['.json'] } }],
-            });
-            const writable = await handle.createWritable();
-            await writable.write(jsonString);
-            await writable.close();
-            flashStatus(`Gespeichert unter: ${handle.name}`);
-            return;
-          } catch (err) {
-            if (err.name === 'AbortError') return;
-            console.error("Speichern fehlgeschlagen:", err);
-          }
-        }
-
-        const blob = new Blob([jsonString], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = filename; a.click();
-        URL.revokeObjectURL(url);
-        flashStatus(`Exportiert als ${filename}`);
-      }
-
-      async function handleImportJSON(file) {
-        const processJSONText = (text) => {
-          try {
-            const imported = JSON.parse(text);
-            if (Array.isArray(imported)) {
-              setPendingImport(imported);
-            } else {
-              alert("Ungültiges Datenformat in der Datei.");
-            }
-          } catch {
-            alert("Ungültiges JSON-Format.");
-          }
-        };
-
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (ev) => processJSONText(ev.target.result);
-          reader.readAsText(file);
-          return;
-        }
-
-        if ('showOpenFilePicker' in window) {
-          try {
-            const [handle] = await window.showOpenFilePicker({
-              types: [{ description: 'JSON Datei', accept: { 'application/json': ['.json'] } }],
-              multiple: false
-            });
-            const fileData = await handle.getFile();
-            const text = await fileData.text();
-            processJSONText(text);
-            return;
-          } catch (err) {
-            if (err.name === 'AbortError') return;
-          }
-        }
-
-        fallbackLoadRef.current?.click();
-      }
-
-      function resolveImport(confirmReplace) {
-        if (!pendingImport) return;
-        if (confirmReplace) {
-          setWines(pendingImport);
-          flashStatus(`${pendingImport.length} Weine geladen (Bestand komplett ersetzt).`);
-        } else {
-          flashStatus("Import abgebrochen.");
-        }
-        setPendingImport(null);
-      }
-
-      async function handleClipboardImport() {
-        try {
-          const text = await navigator.clipboard.readText();
-          const cleanText = text.replace(/```json/g, "").replace(/```/g, "").trim();
-          const data = JSON.parse(cleanText);
-          const newWine = { ...emptyWine(), ...data, id: crypto.randomUUID(), createdAt: Date.now() };
-          setEditing(newWine);
-          setShowModal(true);
-          flashStatus("Wein aus Zwischenablage erkannt!");
-        } catch {
-          alert("Kein gültiges Wein-JSON in der Zwischenablage gefunden.");
-        }
-      }
-
-      async function copyAIPrompt() {
-        try {
-          await navigator.clipboard.writeText(AI_PROMPT_TEXT);
-          flashStatus("KI-Prompt in Zwischenablage kopiert! 📋");
-        } catch {
-          alert("Kopieren fehlgeschlagen.");
-        }
-      }
-
-      const suggest = useMemo(() => {
-        const uniq = (arr) => Array.from(new Set(arr.filter(Boolean))).sort();
-        const uniqNum = (arr) => Array.from(new Set(arr.filter((v) => v !== "" && v !== null && v !== undefined))).sort((a,b) => a - b);
-        return {
-          name: uniq(wines.map((w) => w.name)),
-          winery: uniq(wines.map((w) => w.winery)),
-          vintage: uniqNum(wines.map((w) => w.vintage)),
-          region: uniq(wines.map((w) => w.region)),
-          vineyard: uniq(wines.map((w) => w.vineyard)),
-          country: uniq(wines.map((w) => w.country)),
-          grape: uniq(wines.map((w) => w.grape)),
-          location: uniq(wines.map((w) => w.location)),
-          rating: uniqNum(wines.map((w) => w.rating)),
-          price: uniq(wines.map((w) => w.price)),
-          quantity: uniqNum(wines.map((w) => w.quantity)),
-        };
-      }, [wines]);
-
-      function compareBy(a, b, field) {
-        switch (field) {
-          case "neueste": return a.createdAt - b.createdAt;
-          case "jahrgang": return (Number(a.vintage) || 0) - (Number(b.vintage) || 0);
-          case "bewertung": return (a.rating || 0) - (b.rating || 0);
-          case "name": return (a.name || "").localeCompare(b.name || "");
-          case "preis": return (Number(a.price) || 0) - (Number(b.price) || 0);
-          case "bestand": return (a.quantity || 0) - (b.quantity || 0);
-          case "winzer": return (a.winery || "").localeCompare(b.winery || "");
-          case "region": return (a.region || "").localeCompare(b.region || "");
-          case "vineyard": return (a.vineyard || "").localeCompare(b.vineyard || "");
-          case "land": return (a.country || "").localeCompare(b.country || "");
-          case "grape": return (a.grape || "").localeCompare(b.grape || "");
-          case "lagerort": return (a.location || "").localeCompare(b.location || "");
-          default: return 0;
-        }
-      }
-
-      const filtered = useMemo(() => {
-        let list = wines.filter((w) => {
-          const q = query.trim().toLowerCase();
-          const matchesQ = !q || [w.name, w.winery, w.region, w.vineyard, w.grape, w.country, w.location]
-            .join(" ").toLowerCase().includes(q);
-          
-          const matchesName = nameFilter === "Alle" || w.name === nameFilter;
-          const matchesWinery = wineryFilter === "Alle" || w.winery === wineryFilter;
-          const matchesVintage = vintageFilter === "Alle" || String(w.vintage) === String(vintageFilter);
-          const matchesRegion = regionFilter === "Alle" || w.region === regionFilter;
-          const matchesVineyard = vineyardFilter === "Alle" || w.vineyard === vineyardFilter;
-          const matchesCountry = countryFilter === "Alle" || w.country === countryFilter;
-          const matchesGrape = grapeFilter === "Alle" || w.grape === grapeFilter;
-          const matchesType = typeFilter === "Alle" || w.type === typeFilter;
-          const matchesLoc = locFilter === "Alle" || w.location === locFilter;
-          const matchesRating = ratingFilter === "Alle" || String(w.rating) === String(ratingFilter);
-          const matchesPrice = priceFilter === "Alle" || String(w.price) === String(priceFilter);
-          const matchesQty = qtyFilter === "Alle" || String(w.quantity) === String(qtyFilter);
-
-          return matchesQ && matchesName && matchesWinery && matchesVintage && matchesRegion && 
-                 matchesVineyard && matchesCountry && matchesGrape && matchesType && 
-                 matchesLoc && matchesRating && matchesPrice && matchesQty;
+        window.addEventListener('DOMContentLoaded', () => {
+            initPWA();
+            updateLocationDropdowns();
+            renderList();
+            renderLocationsList();
         });
-        list.sort((a, b) => (sortDir === "asc" ? compareBy(a, b, sortBy) : compareBy(b, a, sortBy)));
-        return list;
-      }, [wines, query, nameFilter, wineryFilter, vintageFilter, regionFilter, vineyardFilter, countryFilter, grapeFilter, typeFilter, locFilter, ratingFilter, priceFilter, qtyFilter, sortBy, sortDir]);
 
-      const grouped = useMemo(() => {
-        const map = new Map();
-        for (const w of filtered) {
-          const key = w.location || "Ohne Lagerort";
-          if (!map.has(key)) map.set(key, []);
-          map.get(key).push(w);
+        // --- TAB NAVIGATION ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            event.target.classList.add('active');
+
+            if(tabId === 'inventory') renderList();
+            if(tabId === 'tasting') renderTastingList();
+            if(tabId === 'add') updateDatalists();
         }
-        return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-      }, [filtered]);
 
-      const stats = useMemo(() => {
-        const totalBottles = wines.reduce((acc, w) => acc + (Number(w.quantity) || 0), 0);
-        const totalConsumed = wines.reduce((acc, w) => acc + (Number(w.consumed) || 0), 0);
-        const totalValue = wines.reduce((acc, w) => acc + (Number(w.price) || 0) * (Number(w.quantity) || 0), 0);
-
-        const typeDist = buildDistribution(wines, (w) => w.type, (w) => Number(w.quantity) || 0, 8);
-        const countryDist = buildDistribution(wines, (w) => w.country, (w) => Number(w.quantity) || 0, 7);
-        const regionDist = buildDistribution(wines, (w) => w.region, (w) => Number(w.quantity) || 0, 7);
-        const grapeDist = buildDistribution(wines, (w) => w.grape, (w) => Number(w.quantity) || 0, 9);
-
-        const priceBuckets = PRICE_BUCKETS.map((b, i) => ({
-          label: b.label,
-          value: wines.filter((w) => {
-            const p = Number(w.price) || 0;
-            const qty = Number(w.quantity) || 0;
-            return qty > 0 && p >= b.min && p < b.max;
-          }).length,
-          color: CHART_PALETTE[i % CHART_PALETTE.length],
-        }));
-
-        return { totalBottles, totalConsumed, totalValue, typeDist, countryDist, regionDist, grapeDist, priceBuckets };
-      }, [wines]);
-
-      function openNew() { setEditing(emptyWine()); setShowModal(true); }
-      function openEdit(w) { setEditing({ ...w }); setShowModal(true); }
-      function closeModal() { setShowModal(false); setEditing(null); }
-
-      function saveEditing() {
-        if (!editing.name.trim()) {
-          alert("Bitte einen Namen eingeben.");
-          return;
-        }
-        setWines((prev) => {
-          const exists = prev.some((w) => w.id === editing.id);
-          if (exists) return prev.map((w) => (w.id === editing.id ? editing : w));
-          return [editing, ...prev];
-        });
-        closeModal();
-      }
-
-      function deleteWine(id, onDeleted) {
-        if (confirm("Wein wirklich löschen?")) {
-          setWines((prev) => prev.filter((w) => w.id !== id));
-          flashStatus("Wein gelöscht.");
-          if (onDeleted) onDeleted();
-        }
-      }
-
-      function clearAllWines() {
-        if (wines.length === 0) return;
-        if (confirm(`Wirklich ALLE ${wines.length} Weine unwiderruflich löschen?`)) {
-          setWines([]);
-          flashStatus("Kompletter Bestand gelöscht.");
-        }
-      }
-
-      function resetFilters() {
-        setQuery("");
-        setNameFilter("Alle");
-        setWineryFilter("Alle");
-        setVintageFilter("Alle");
-        setRegionFilter("Alle");
-        setVineyardFilter("Alle");
-        setCountryFilter("Alle");
-        setGrapeFilter("Alle");
-        setTypeFilter("Alle");
-        setLocFilter("Alle");
-        setRatingFilter("Alle");
-        setPriceFilter("Alle");
-        setQtyFilter("Alle");
-        setSortBy("neueste");
-        setSortDir("desc");
-      }
-
-      function handleNameChange(value) {
-        setEditing((prev) => {
-          const next = { ...prev, name: value };
-          const isNewWine = !wines.some((w) => w.id === prev.id);
-          if (!isNewWine) return next;
-
-          const match = wines.find((w) => w.name.trim().toLowerCase() === value.trim().toLowerCase());
-          if (!match) return next;
-
-          const fillIfEmpty = (field) => (next[field] ? next[field] : match[field] || next[field]);
-          return {
-            ...next,
-            winery: fillIfEmpty("winery"),
-            region: fillIfEmpty("region"),
-            vineyard: fillIfEmpty("vineyard"),
-            country: fillIfEmpty("country"),
-            grape: fillIfEmpty("grape"),
-            location: fillIfEmpty("location"),
-            type: prev.type && prev.type !== "Rot" ? prev.type : (match.type || prev.type),
-          };
-        });
-      }
-
-      async function handleImageFile(file) {
-        if (!file) return;
-        try {
-          const thumb = await resizeImage(file, 360, 0.6);
-          setEditing((prev) => ({ ...prev, image: thumb }));
-        } catch (err) {
-          console.error("Bildverarbeitung fehlgeschlagen", err);
-        }
-      }
-
-      const filterSelectStyle = { width: "auto" };
-
-      return e("div", { style: { minHeight: "100vh", background: "var(--bg-main)" } },
-        e("input", {
-          ref: fallbackLoadRef, type: "file", accept: ".json", style: { display: "none" },
-          onChange: (ev) => ev.target.files[0] && handleImportJSON(ev.target.files[0])
-        }),
-
-        /* Header */
-        e("header", {
-          style: {
-            borderBottom: "1px solid var(--border-color)", position: "sticky", top: 0,
-            background: "rgba(18, 18, 18, 0.9)", backdropFilter: "blur(10px)", zIndex: 10
-          }
-        },
-          e("div", { className: "max-w-5xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap" },
-            e("div", { className: "flex items-center gap-3" },
-              page === "stats"
-                ? e("button", { onClick: () => setPage("main"), style: { ...btnBase, padding: "10px" } }, e(Icons.ArrowLeft, { size: 18 }))
-                : e("div", {
-                    style: {
-                      width: 40, height: 40, borderRadius: 10, background: "#1E1E1E",
-                      border: "1px solid var(--border-accent)", display: "flex",
-                      alignItems: "center", justifyContent: "center"
-                    }
-                  }, e(Icons.Wine, { size: 22, color: "#FFFFFF" })),
-              e("div", null,
-                e("h1", { className: "graffiti-title", style: { fontSize: 22, lineHeight: 1.1 } },
-                  page === "stats" ? "Statistik" : "Weinkeller ",
-                  page === "main" && e("span", { style: { fontSize: 15, color: "#D1D1D6" } }, "by Bubbleblade")
-                ),
-                e("p", { style: { fontSize: 11, color: "var(--text-muted)", marginTop: 4 } },
-                  `${stats.totalBottles} Flaschen · ${stats.totalConsumed} getrunken`
-                )
-              )
-            ),
-
-            page === "main" && e("div", { className: "flex items-center gap-2 flex-wrap" },
-              e("button", { onClick: copyAIPrompt, style: btnBase }, e(Icons.Copy, { size: 14 }), " KI-Prompt"),
-              e("button", { onClick: handleClipboardImport, style: btnBase }, e(Icons.ClipboardPaste, { size: 14 }), " Aus Zwischenablage"),
-              e("button", { onClick: () => setPage("stats"), style: btnBase }, e(Icons.PieChart, { size: 14 }), " Statistik"),
-              e("button", { onClick: openNew, style: btnPrimary }, e(Icons.Plus, { size: 16 }), " Wein")
-            )
-          ),
-
-          statusMsg && e("div", { style: { background: "#1A1A1A", borderTop: "1px solid var(--border-color)" } },
-            e("div", { className: "max-w-5xl px-4 py-3 flex items-center gap-2", style: { fontSize: 12, color: "#FFFFFF" } },
-              e(Icons.Check, { size: 14 }), statusMsg
-            )
-          )
-        ),
-
-        /* STATISTIK-SEITE */
-        page === "stats" && e("main", { className: "max-w-5xl px-4 py-6" },
-          e("div", { className: "flex flex-col gap-4" },
-            wines.length === 0
-              ? e("div", { style: { textAlign: "center", padding: "40px 20px", color: "var(--text-muted)" } },
-                  e(Icons.PieChart, { size: 36, color: "var(--text-subtle)" }),
-                  e("p", { style: { fontSize: 16, color: "var(--text-main)", marginTop: 12, fontWeight: 600 } }, "Keine Daten für Statistik"),
-                  e("p", { style: { fontSize: 13, marginTop: 4 } }, "Lege zuerst ein paar Weine an.")
-                )
-              : e(React.Fragment, null,
-                  e("div", {
-                    style: {
-                      background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 12,
-                      padding: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 16
-                    }
-                  },
-                    e("div", null,
-                      e("p", { style: { fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" } }, "Lagerbestand"),
-                      e("p", { style: { fontSize: 18, fontWeight: 700 } }, `${stats.totalBottles} Stk.`)
-                    ),
-                    e("div", null,
-                      e("p", { style: { fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" } }, "Getrunken"),
-                      e("p", { style: { fontSize: 18, fontWeight: 700, color: "var(--text-muted)" } }, `${stats.totalConsumed} Stk.`)
-                    ),
-                    e("div", null,
-                      e("p", { style: { fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" } }, "Gesamtwert"),
-                      e("p", { style: { fontSize: 18, fontWeight: 700 } }, `${stats.totalValue.toFixed(2)} €`)
-                    ),
-                    e("div", null,
-                      e("p", { style: { fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" } }, "Verschiedene Weine"),
-                      e("p", { style: { fontSize: 18, fontWeight: 700 } }, wines.length)
-                    )
-                  ),
-
-                  e(StatBlock, { title: "Verteilung nach Typ", data: stats.typeDist }),
-                  e(StatBlock, { title: "Verteilung nach Rebsorte", data: stats.grapeDist }),
-                  e(BarChartBlock, { title: "Preislagen (Anzahl Weine im Bestand)", data: stats.priceBuckets }),
-                  e(StatBlock, { title: "Verteilung nach Land", data: stats.countryDist }),
-                  e(StatBlock, { title: "Verteilung nach Region", data: stats.regionDist })
-                ),
-
-            /* Trinkprotokoll */
-            e("div", {
-              style: { background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 12, padding: 16 }
-            },
-              e("h3", { style: { fontSize: 13, fontWeight: 600, marginBottom: 14, textTransform: "uppercase", letterSpacing: 0.4, color: "var(--text-muted)" } },
-                `Getrunken – Verlauf (${consumptionLog.length})`
-              ),
-              consumptionLog.length === 0
-                ? e("p", { style: { fontSize: 12, color: "var(--text-subtle)" } }, "Noch keine Flasche als getrunken markiert.")
-                : e("div", { className: "flex flex-col gap-2", style: { maxHeight: 360, overflowY: "auto" } },
-                    consumptionLog.map((entry) =>
-                      e("div", {
-                        key: entry.id,
-                        className: "flex items-center justify-between gap-2",
-                        style: { padding: "8px 0", borderBottom: "1px solid var(--border-color)" }
-                      },
-                        e("div", { style: { minWidth: 0 } },
-                          e("p", { style: { fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
-                            entry.name || "Unbenannt", entry.vintage ? ` (${entry.vintage})` : ""
-                          ),
-                          e("p", { style: { fontSize: 11, color: "var(--text-muted)" } },
-                            [entry.winery, entry.type].filter(Boolean).join(" · ")
-                          ),
-                          e("p", { className: "mono", style: { fontSize: 11, color: "var(--text-subtle)", marginTop: 2 } },
-                            formatLogDate(entry.openedAt)
-                          )
-                        ),
-                        e("button", {
-                          onClick: () => undoLogEntry(entry),
-                          title: "Rückgängig machen",
-                          style: { ...btnBase, padding: "6px 10px", fontSize: 11, flexShrink: 0 }
-                        }, "Rückgängig")
-                      )
-                    )
-                  )
-            ),
-
-            wines.length > 0 && e("button", { onClick: clearAllWines, style: { ...btnDanger, alignSelf: "flex-start" } },
-              e(Icons.Trash2, { size: 14 }), " Kompletten Bestand löschen"
-            )
-          )
-        ),
-
-        /* HAUPTSEITE */
-        page === "main" && e(React.Fragment, null,
-          e("div", { className: "max-w-5xl px-4 pt-4" },
-            e("div", { className: "flex flex-wrap items-center gap-2" },
-              e("div", {
-                className: "flex items-center gap-2 flex-1",
-                style: { minWidth: 180, background: "var(--bg-input)", border: "1px solid var(--border-color)", borderRadius: 8, padding: "8px 12px" }
-              },
-                e(Icons.Search, { size: 15, color: "var(--text-muted)" }),
-                e("input", {
-                  value: query, onChange: (ev) => setQuery(ev.target.value),
-                  placeholder: "Freitextsuche…",
-                  style: { border: "none", background: "transparent", padding: 0 }
-                })
-              ),
-
-              e("button", {
-                onClick: () => setShowFilters(!showFilters),
-                style: { ...btnBase, background: showFilters ? "#333" : "var(--bg-card)" }
-              }, e(Icons.Filter, { size: 14 }), " Filter"),
-
-              e("div", { className: "flex items-center gap-1", style: { marginLeft: "auto" } },
-                e("button", {
-                  onClick: () => setView("regal"), title: "Nach Lagerort",
-                  style: { ...btnBase, background: view === "regal" ? "#333" : "transparent" }
-                }, e(Icons.Rows3, { size: 15 })),
-                e("button", {
-                  onClick: () => setView("grid"), title: "Kacheln",
-                  style: { ...btnBase, background: view === "grid" ? "#333" : "transparent" }
-                }, e(Icons.LayoutGrid, { size: 15 })),
-                e("button", { onClick: handleExportJSON, style: btnBase, title: "Datei in Ordner speichern" }, e(Icons.Save, { size: 14 })),
-                e("button", { onClick: () => handleImportJSON(), style: btnBase, title: "Datei aus Ordner laden" }, e(Icons.FolderInput, { size: 14 }))
-              )
-            ),
-
-            /* Erweiterte Filter-Leiste */
-            showFilters && e("div", {
-              className: "flex flex-wrap items-center gap-2",
-              style: { marginTop: 10, padding: 12, background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 10 }
-            },
-              e("select", { value: nameFilter, onChange: (ev) => setNameFilter(ev.target.value), style: filterSelectStyle },
-                e("option", { value: "Alle" }, "Alle Namen"),
-                suggest.name.map((n) => e("option", { key: n, value: n }, n))
-              ),
-              e("select", { value: wineryFilter, onChange: (ev) => setWineryFilter(ev.target.value), style: filterSelectStyle },
-                e("option", { value: "Alle" }, "Alle Winzer"),
-                suggest.winery.map((w) => e("option", { key: w, value: w }, w))
-              ),
-              e("select", { value: vintageFilter, onChange: (ev) => setVintageFilter(ev.target.value), style: filterSelectStyle },
-                e("option", { value: "Alle" }, "Alle Jahrgänge"),
-                suggest.vintage.map((v) => e("option", { key: v, value: v }, v))
-              ),
-              e("select", { value: typeFilter, onChange: (ev) => setTypeFilter(ev.target.value), style: filterSelectStyle },
-                e("option", { value: "Alle" }, "Alle Typen"),
-                TYPES.map((t) => e("option", { key: t, value: t }, t))
-              ),
-              e("select", { value: regionFilter, onChange: (ev) => setRegionFilter(ev.target.value), style: filterSelectStyle },
-                e("option", { value: "Alle" }, "Alle Regionen"),
-                suggest.region.map((r) => e("option", { key: r, value: r }, r))
-              ),
-              e("select", { value: vineyardFilter, onChange: (ev) => setVineyardFilter(ev.target.value), style: filterSelectStyle },
-                e("option", { value: "Alle" }, "Alle Lagen"),
-                suggest.vineyard.map((v) => e("option", { key: v, value: v }, v))
-              ),
-              e("select", { value: countryFilter, onChange: (ev) => setCountryFilter(ev.target.value), style: filterSelectStyle },
-                e("option", { value: "Alle" }, "Alle Länder"),
-                suggest.country.map((c) => e("option", { key: c, value: c }, c))
-              ),
-              e("select", { value: grapeFilter, onChange: (ev) => setGrapeFilter(ev.target.value), style: filterSelectStyle },
-                e("option", { value: "Alle" }, "Alle Rebsorten"),
-                suggest.grape.map((g) => e("option", { key: g, value: g }, g))
-              ),
-              e("select", { value: locFilter, onChange: (ev) => setLocFilter(ev.target.value), style: filterSelectStyle },
-                e("option", { value: "Alle" }, "Alle Lagerorte"),
-                suggest.location.map((l) => e("option", { key: l, value: l }, l))
-              ),
-              e("select", { value: ratingFilter, onChange: (ev) => setRatingFilter(ev.target.value), style: filterSelectStyle },
-                e("option", { value: "Alle" }, "Alle Bewertungen"),
-                suggest.rating.map((r) => e("option", { key: r, value: r }, `${r} Stern(e)`))
-              ),
-              e("select", { value: priceFilter, onChange: (ev) => setPriceFilter(ev.target.value), style: filterSelectStyle },
-                e("option", { value: "Alle" }, "Alle Preise"),
-                suggest.price.map((p) => e("option", { key: p, value: p }, `${p} €`))
-              ),
-              e("select", { value: qtyFilter, onChange: (ev) => setQtyFilter(ev.target.value), style: filterSelectStyle },
-                e("option", { value: "Alle" }, "Alle Bestände"),
-                suggest.quantity.map((q) => e("option", { key: q, value: q }, `${q} Stk.`))
-              ),
-              
-              /* Sortierung */
-              e("span", { style: { fontSize: 12, color: "var(--text-muted)", marginLeft: 6, marginRight: 2 } }, "Sortieren:"),
-              e("select", { value: sortBy, onChange: (ev) => setSortBy(ev.target.value), style: filterSelectStyle },
-                SORT_FIELDS.map((f) => e("option", { key: f.value, value: f.value }, f.label))
-              ),
-              e("button", {
-                onClick: () => setSortDir((d) => (d === "asc" ? "desc" : "asc")),
-                style: btnBase, title: "Sortierrichtung umkehren"
-              }, e(Icons.SortDesc, { size: 14 }), sortDir === "asc" ? " Aufsteigend" : " Absteigend"),
-              e("button", { onClick: resetFilters, style: btnBase }, "Zurücksetzen")
-            )
-          ),
-
-          e("main", { className: "max-w-5xl px-4 py-6" },
-            filtered.length === 0 ?
-              e("div", { style: { textAlign: "center", padding: "60px 20px", color: "var(--text-muted)" } },
-                e(Icons.Wine, { size: 36, color: "var(--text-subtle)" }),
-                e("p", { style: { fontSize: 16, color: "var(--text-main)", marginTop: 12, fontWeight: 600 } },
-                  wines.length === 0 ? "Keine Weine vorhanden" : "Keine Treffer"
-                ),
-                e("p", { style: { fontSize: 13, marginTop: 4 } },
-                  wines.length === 0 ? "Lege einen neuen Wein an." : "Ändere Suche oder Filter."
-                )
-              ) :
-              view === "grid" ?
-                e("div", { className: "grid gap-3", style: { gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))" } },
-                  filtered.map((w) =>
-                    e(WineCard, {
-                      key: w.id, w,
-                      onEdit: () => openEdit(w),
-                      onDrink: (ev) => drinkBottle(w.id, ev),
-                      onRefill: (ev) => refillBottle(w.id, ev)
-                    })
-                  )
-                ) :
-                e("div", { className: "flex flex-col gap-6" },
-                  grouped.map(([loc, list]) =>
-                    e("div", { key: loc },
-                      e("div", {
-                        className: "flex items-center gap-2 mb-3",
-                        style: { paddingBottom: 6, borderBottom: "1px solid var(--border-color)" }
-                      },
-                        e(Icons.MapPin, { size: 14, color: "var(--text-muted)" }),
-                        e("span", { style: { fontSize: 14, fontWeight: 600 } }, loc),
-                        e("span", { style: { fontSize: 12, color: "var(--text-muted)" } }, `· ${list.length} Flaschen`)
-                      ),
-                      e("div", { className: "grid gap-3", style: { gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))" } },
-                        list.map((w) =>
-                          e(WineCard, {
-                            key: w.id, w,
-                            onEdit: () => openEdit(w),
-                            onDrink: (ev) => drinkBottle(w.id, ev),
-                            onRefill: (ev) => refillBottle(w.id, ev)
-                          })
-                        )
-                      )
-                    )
-                  )
-                )
-          )
-        ),
-
-        /* Edit / Add Modal */
-        showModal && editing && e("div", {
-          onClick: closeModal,
-          style: {
-            position: "fixed", inset: 0, background: "rgba(0, 0, 0, 0.8)",
-            display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50
-          }
-        },
-          e("div", {
-            onClick: (ev) => ev.stopPropagation(),
-            style: {
-              background: "var(--bg-card)", width: "100%", maxWidth: 540, maxHeight: "90vh",
-              overflowY: "auto", borderRadius: "16px 16px 0 0", border: "1px solid var(--border-accent)"
-            }
-          },
-            e("div", {
-              className: "flex items-center justify-between px-4 py-3",
-              style: { borderBottom: "1px solid var(--border-color)", position: "sticky", top: 0, background: "var(--bg-card)", zIndex: 5 }
-            },
-              e("h2", { style: { fontSize: 16, fontWeight: 600 } },
-                wines.some((w) => w.id === editing.id) ? "Wein bearbeiten" : "Neuer Wein"
-              ),
-              e("button", { onClick: closeModal, style: { ...btnBase, padding: "6px" } }, e(Icons.X, { size: 16 }))
-            ),
-
-            e("div", { className: "px-4 py-4 flex flex-col gap-3" },
-              e("div", null,
-                e("div", { className: "flex gap-2 mb-2" },
-                  e("button", { onClick: () => fileInputCam.current.click(), style: { ...btnBase, flex: 1, justifyContent: "center" } },
-                    e(Icons.Camera, { size: 15 }), " Kamera"
-                  ),
-                  e("button", { onClick: () => fileInputUpload.current.click(), style: { ...btnBase, flex: 1, justifyContent: "center" } },
-                    e(Icons.Upload, { size: 15 }), " Datei"
-                  ),
-                  e("input", {
-                    ref: fileInputCam, type: "file", accept: "image/*", capture: "environment", style: { display: "none" },
-                    onChange: (ev) => ev.target.files[0] && handleImageFile(ev.target.files[0])
-                  }),
-                  e("input", {
-                    ref: fileInputUpload, type: "file", accept: "image/*", style: { display: "none" },
-                    onChange: (ev) => ev.target.files[0] && handleImageFile(ev.target.files[0])
-                  })
-                ),
-                editing.image && e("div", { style: { position: "relative", borderRadius: 8, overflow: "hidden" } },
-                  e("img", { src: editing.image, alt: "", style: { width: "100%", maxHeight: 180, objectFit: "cover" } }),
-                  e("button", {
-                    onClick: () => setEditing({ ...editing, image: null }),
-                    style: { position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,0.7)", border: "none", borderRadius: "50%", padding: 4, color: "#fff" }
-                  }, e(Icons.X, { size: 14 }))
-                )
-              ),
-
-              e(Field, { label: "Name *" },
-                e(SuggestInput, { value: editing.name, onChange: handleNameChange, options: suggest.name, listId: "dl-n", placeholder: "z.B. Opus One" })
-              ),
-              !wines.some((w) => w.id === editing.id) && suggest.name.some((n) => n.toLowerCase() === (editing.name || "").trim().toLowerCase()) &&
-                e("p", { style: { fontSize: 11, color: "var(--text-muted)", marginTop: -6 } },
-                  "ℹ️ Bekannter Wein erkannt – Felder wurden automatisch übernommen, du kannst sie anpassen."
-                ),
-
-              e("div", { className: "grid grid-cols-2 gap-3" },
-                e(Field, { label: "Winzer / Weingut" },
-                  e(SuggestInput, { value: editing.winery, onChange: (v) => setEditing({ ...editing, winery: v }), options: suggest.winery, listId: "dl-w" })
-                ),
-                e(Field, { label: "Jahrgang" },
-                  e("input", { value: editing.vintage, onChange: (ev) => setEditing({ ...editing, vintage: ev.target.value }) })
-                )
-              ),
-
-              e("div", { className: "grid grid-cols-2 gap-3" },
-                e(Field, { label: "Region" },
-                  e(SuggestInput, { value: editing.region, onChange: (v) => setEditing({ ...editing, region: v }), options: suggest.region, listId: "dl-r" })
-                ),
-                e(Field, { label: "Rebsorte" },
-                  e(SuggestInput, { value: editing.grape, onChange: (v) => setEditing({ ...editing, grape: v }), options: suggest.grape, listId: "dl-g" })
-                )
-              ),
-
-              e("div", { className: "grid grid-cols-2 gap-3" },
-                e(Field, { label: "Land" },
-                  e(SuggestInput, { value: editing.country, onChange: (v) => setEditing({ ...editing, country: v }), options: suggest.country, listId: "dl-c" })
-                ),
-                e(Field, { label: "Weinbergslage" },
-                  e(SuggestInput, { value: editing.vineyard, onChange: (v) => setEditing({ ...editing, vineyard: v }), options: suggest.vineyard, listId: "dl-v" })
-                )
-              ),
-
-              e("div", { className: "grid grid-cols-3 gap-3" },
-                e(Field, { label: "Typ" },
-                  e("select", { value: editing.type, onChange: (ev) => setEditing({ ...editing, type: ev.target.value }) },
-                    TYPES.map((t) => e("option", { key: t }, t)))
-                ),
-                e(Field, { label: "Lagerbestand" },
-                  e("input", { type: "number", min: "0", value: editing.quantity, onChange: (ev) => setEditing({ ...editing, quantity: Number(ev.target.value) }) })
-                ),
-                e(Field, { label: "Getrunken" },
-                  e("input", { type: "number", min: "0", value: editing.consumed || 0, onChange: (ev) => setEditing({ ...editing, consumed: Number(ev.target.value) }) })
-                )
-              ),
-
-              e("div", { className: "grid grid-cols-2 gap-3" },
-                e(Field, { label: "Lagerort" },
-                  e(SuggestInput, { value: editing.location, onChange: (v) => setEditing({ ...editing, location: v }), options: suggest.location, listId: "dl-l" })
-                ),
-                e(Field, { label: "Kaufpreis (€)" },
-                  e("input", { value: editing.price, onChange: (ev) => setEditing({ ...editing, price: ev.target.value }) })
-                )
-              ),
-
-              e(Field, { label: "Bewertung" },
-                e("div", { style: { paddingTop: 4 } }, e(Stars, { value: editing.rating, onChange: (r) => setEditing({ ...editing, rating: r }), size: 20 }))
-              ),
-
-              e(Field, { label: "Notizen" },
-                e("textarea", { value: editing.notes, onChange: (ev) => setEditing({ ...editing, notes: ev.target.value }), rows: 3 })
-              )
-            ),
-
-            e("div", {
-              className: "px-4 py-3 flex gap-2",
-              style: { borderTop: "1px solid var(--border-color)", position: "sticky", bottom: 0, background: "var(--bg-card)" }
-            },
-              wines.some((w) => w.id === editing.id) &&
-                e("button", {
-                  onClick: () => deleteWine(editing.id, closeModal),
-                  style: { ...btnBase, color: "#8E8E93" }
-                }, e(Icons.Trash2, { size: 16 })),
-              e("button", { onClick: saveEditing, style: { ...btnPrimary, flex: 1, justifyContent: "center" } }, "Speichern")
-            )
-          )
-        ),
-
-        /* Import Modal */
-        pendingImport && e("div", {
-          style: {
-            position: "fixed", inset: 0, background: "rgba(0, 0, 0, 0.8)",
-            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 60, padding: 20
-          }
-        },
-          e("div", {
-            style: { background: "var(--bg-card)", width: "100%", maxWidth: 400, borderRadius: 14, border: "1px solid var(--border-accent)", padding: 20 }
-          },
-            e("h2", { style: { fontSize: 16, fontWeight: 600, marginBottom: 6 } }, "Import bestätigen"),
-            e("p", { style: { fontSize: 13, color: "var(--text-muted)", marginBottom: 18 } },
-              `${pendingImport.length} Weine in der Datei gefunden. Soll die aktuelle Datenbank komplett ersetzt werden?`
-            ),
-            e("div", { className: "flex flex-col gap-2" },
-              e("button", { onClick: () => resolveImport(true), style: { ...btnPrimary, justifyContent: "center" } }, "Bestand ersetzen"),
-              e("button", { onClick: () => resolveImport(false), style: { ...btnBase, justifyContent: "center", color: "var(--text-muted)" } }, "Abbrechen")
-            )
-          )
-        )
-      );
-    }
-
-    /* Card Component */
-    function WineCard({ w, onEdit, onDrink, onRefill }) {
-      return e("div", {
-        onClick: onEdit,
-        style: {
-          background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 10,
-          overflow: "hidden", cursor: "pointer", display: "flex", flexDirection: "column", justifyContent: "space-between"
-        }
-      },
-        e("div", { style: { height: 3, background: TYPE_COLORS[w.type] || "#FFFFFF" } }),
-        e("div", { style: { display: "flex", gap: 10, padding: 12 } },
-          e("div", {
-            style: {
-              width: 48, height: 64, borderRadius: 6, overflow: "hidden", flexShrink: 0,
-              background: "var(--bg-input)", display: "flex", alignItems: "center", justifyContent: "center"
-            }
-          },
-            w.image ?
-              e("img", { src: w.image, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) :
-              e(Icons.Wine, { size: 20, color: "var(--text-subtle)" })
-          ),
-          e("div", { style: { minWidth: 0, flex: 1 } },
-            e("p", { style: { fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, w.name || "Unbenannt"),
-            e("p", { style: { fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis" } }, w.winery),
-            e("p", { style: { fontSize: 11, color: "var(--text-subtle)", marginTop: 2 } },
-              [w.vintage, w.region].filter(Boolean).join(" · ")
-            ),
-            e("div", { className: "flex items-center justify-between", style: { marginTop: 6 } },
-              e(Stars, { value: w.rating, readOnly: true, size: 12 }),
-              e("span", { style: { fontSize: 11, fontWeight: 700 } }, `${w.quantity} Stk.`)
-            )
-          )
-        ),
-        e("div", {
-          style: {
-            background: "var(--bg-input)", borderTop: "1px solid var(--border-color)", padding: "6px 12px",
-            display: "flex", alignItems: "center", justifyContent: "between"
-          }
-        },
-          e("span", { style: { fontSize: 11, color: "var(--text-muted)" } }, `Getrunken: ${w.consumed || 0}`),
-          e("div", { className: "flex items-center gap-1" },
-            e("button", {
-              onClick: onDrink, disabled: w.quantity <= 0,
-              style: {
-                background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 4,
-                color: "#FFF", fontSize: 11, padding: "2px 6px", cursor: "pointer", opacity: w.quantity <= 0 ? 0.4 : 1
-              }
-            }, "-1 🍷"),
-            e("button", {
-              onClick: onRefill,
-              style: { background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 4, color: "#FFF", fontSize: 11, padding: "2px 6px", cursor: "pointer" }
-            }, "+1 🍾")
-          )
-        )
-      );
-    }
-
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(e(WeinkellerApp));
-
-    // --- PWA Service Worker Inlining & Registrierung ---
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        const swCode = `
-          const CACHE_NAME = 'weinkeller-v1';
-          const ASSETS = [
-            './',
-            'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Permanent+Marker&display=swap',
-            'https://unpkg.com/react@18/umd/react.production.min.js',
-            'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js'
-          ];
-
-          self.addEventListener('install', (e) => {
-            e.waitUntil(
-              caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())
-            );
-          });
-
-          self.addEventListener('activate', (e) => {
-            e.waitUntil(
-              caches.keys().then((keys) =>
-                Promise.all(keys.map((k) => k !== CACHE_NAME && caches.delete(k)))
-              ).then(() => self.clients.claim())
-            );
-          });
-
-          self.addEventListener('fetch', (e) => {
-            e.respondWith(
-              caches.match(e.request).then((res) => res || fetch(e.request).then((netRes) => {
-                return caches.open(CACHE_NAME).then((cache) => {
-                  cache.put(e.request, netRes.clone());
-                  return netRes;
+        // --- LAGERORTE VERWALTUNG ---
+        function updateLocationDropdowns() {
+            const selects = [document.getElementById('field-location'), document.getElementById('filter-location')];
+            selects.forEach(select => {
+                const currentVal = select.value;
+                select.innerHTML = select.id === 'filter-location' ? '<option value="">Alle Lagerorte</option>' : '';
+                locations.forEach(loc => {
+                    const opt = document.createElement('option');
+                    opt.value = loc;
+                    opt.textContent = loc;
+                    select.appendChild(opt);
                 });
-              })).catch(() => caches.match('./'))
-            );
-          });
-        `;
+                select.value = currentVal;
+            });
+        }
 
-        const swBlob = new Blob([swCode], { type: "text/javascript" });
-        const swUrl = URL.createObjectURL(swBlob);
+        function addLocation() {
+            const input = document.getElementById('new-location-input');
+            const val = input.value.trim();
+            if (val && !locations.includes(val)) {
+                locations.push(val);
+                localStorage.setItem('my_wine_locations', JSON.stringify(locations));
+                input.value = '';
+                updateLocationDropdowns();
+                renderLocationsList();
+            }
+        }
 
-        navigator.serviceWorker.register(swUrl)
-          .then(() => console.log("Inline PWA Service Worker erfolgreich registriert."))
-          .catch((err) => console.warn("Service Worker Registrierung fehlgeschlagen:", err));
-      });
-    }
-  </script>
+        function deleteLocation(loc) {
+            locations = locations.filter(l => l !== loc);
+            localStorage.setItem('my_wine_locations', JSON.stringify(locations));
+            updateLocationDropdowns();
+            renderLocationsList();
+        }
+
+        function renderLocationsList() {
+            const ul = document.getElementById('location-list');
+            ul.innerHTML = locations.map(loc => `
+                <li style="display:flex; justify-content:space-between; align-items:center; padding: 0.4rem 0; border-bottom: 1px solid #eee;">
+                    <span>${loc}</span>
+                    <button class="btn btn-danger btn-sm" onclick="deleteLocation('${loc}')">Löschen</button>
+                </li>
+            `).join('');
+        }
+
+        // --- DYNAMISCHE DROPDOWNS (DATALISTS) ---
+        function updateDatalists() {
+            const populateList = (id, key) => {
+                const list = document.getElementById(id);
+                const values = [...new Set(wines.map(w => w[key]).filter(Boolean))];
+                list.innerHTML = values.map(v => `<option value="${v}">`).join('');
+            };
+            populateList('dl-winery', 'winery');
+            populateList('dl-type', 'type');
+            populateList('dl-grape', 'grape');
+
+            // Filter Dropdowns befüllen
+            const populateFilter = (id, key, defaultText) => {
+                const select = document.getElementById(id);
+                const current = select.value;
+                const values = [...new Set(wines.map(w => w[key]).filter(Boolean))];
+                select.innerHTML = `<option value="">${defaultText}</option>` + values.map(v => `<option value="${v}">${v}</option>`).join('');
+                select.value = current;
+            };
+            populateFilter('filter-type', 'type', 'Alle Weinarten');
+            populateFilter('filter-winery', 'winery', 'Alle Weingüter');
+            populateFilter('filter-grape', 'grape', 'Alle Rebsorten');
+        }
+
+        // --- WEIN SPEICHERN & BEARBEITEN ---
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                document.getElementById('field-image-base64').value = reader.result;
+                document.getElementById('image-preview').innerHTML = `<img src="${reader.result}" style="height: 80px; border-radius: 4px;">`;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveWine(e) {
+            e.preventDefault();
+            const id = document.getElementById('wine-id').value || Date.now().toString();
+            
+            const wineData = {
+                id: id,
+                name: document.getElementById('field-name').value,
+                winery: document.getElementById('field-winery').value,
+                type: document.getElementById('field-type').value,
+                grape: document.getElementById('field-grape').value,
+                year: parseInt(document.getElementById('field-year').value) || '',
+                location: document.getElementById('field-location').value,
+                quantity: parseInt(document.getElementById('field-quantity').value) || 0,
+                price: parseFloat(document.getElementById('field-price').value) || '',
+                drinkable: document.getElementById('field-drinkable').value,
+                image: document.getElementById('field-image-base64').value,
+                notes: document.getElementById('field-notes').value,
+                starred: wines.find(w => w.id === id)?.starred || false
+            };
+
+            const existingIndex = wines.findIndex(w => w.id === id);
+            if (existingIndex > -1) {
+                wines[existingIndex] = wineData;
+            } else {
+                wines.push(wineData);
+            }
+
+            localStorage.setItem('my_wines', JSON.stringify(wines));
+            resetForm();
+            switchTab('inventory');
+        }
+
+        function editWine(id) {
+            const wine = wines.find(w => w.id === id);
+            if (!wine) return;
+
+            document.getElementById('wine-id').value = wine.id;
+            document.getElementById('field-name').value = wine.name || '';
+            document.getElementById('field-winery').value = wine.winery || '';
+            document.getElementById('field-type').value = wine.type || '';
+            document.getElementById('field-grape').value = wine.grape || '';
+            document.getElementById('field-year').value = wine.year || '';
+            document.getElementById('field-location').value = wine.location || locations[0];
+            document.getElementById('field-quantity').value = wine.quantity;
+            document.getElementById('field-price').value = wine.price || '';
+            document.getElementById('field-drinkable').value = wine.drinkable || '';
+            document.getElementById('field-notes').value = wine.notes || '';
+            document.getElementById('field-image-base64').value = wine.image || '';
+            
+            if(wine.image) {
+                document.getElementById('image-preview').innerHTML = `<img src="${wine.image}" style="height: 80px; border-radius: 4px;">`;
+            } else {
+                document.getElementById('image-preview').innerHTML = '';
+            }
+
+            document.getElementById('form-title').textContent = 'Wein bearbeiten';
+            
+            // Tab wechseln ohne Event Context
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-add').classList.remove('hidden');
+            updateDatalists();
+        }
+
+        function resetForm() {
+            document.getElementById('wine-form').reset();
+            document.getElementById('wine-id').value = '';
+            document.getElementById('field-image-base64').value = '';
+            document.getElementById('image-preview').innerHTML = '';
+            document.getElementById('form-title').textContent = 'Neuen Wein anlegen';
+        }
+
+        // --- BESTANDS-AKTIONEN (ÖFFNEN / EINLAGERN) ---
+        function changeQuantity(id, delta) {
+            const wine = wines.find(w => w.id === id);
+            if (wine) {
+                wine.quantity = Math.max(0, wine.quantity + delta);
+                localStorage.setItem('my_wines', JSON.stringify(wines));
+                renderList();
+                if(!document.getElementById('tab-tasting').classList.contains('hidden')) renderTastingList();
+            }
+        }
+
+        function toggleStar(id) {
+            const wine = wines.find(w => w.id === id);
+            if (wine) {
+                wine.starred = !wine.starred;
+                localStorage.setItem('my_wines', JSON.stringify(wines));
+                renderList();
+                renderTastingList();
+            }
+        }
+
+        function deleteWine(id) {
+            if(confirm('Möchtest du diesen Wein wirklich löschen?')) {
+                wines = wines.filter(w => w.id !== id);
+                localStorage.setItem('my_wines', JSON.stringify(wines));
+                renderList();
+            }
+        }
+
+        // --- RENDERN DER LISTEN ---
+        function renderList() {
+            updateDatalists();
+            const container = document.getElementById('wine-container');
+            
+            // Filterwerte auslesen
+            const search = document.getElementById('filter-search').value.toLowerCase();
+            const loc = document.getElementById('filter-location').value;
+            const type = document.getElementById('filter-type').value;
+            const winery = document.getElementById('filter-winery').value;
+            const grape = document.getElementById('filter-grape').value;
+            const year = document.getElementById('filter-year').value;
+            const maxPrice = parseFloat(document.getElementById('filter-max-price').value);
+
+            const filtered = wines.filter(w => {
+                const matchSearch = !search || w.name?.toLowerCase().includes(search) || w.notes?.toLowerCase().includes(search);
+                const matchLoc = !loc || w.location === loc;
+                const matchType = !type || w.type === type;
+                const matchWinery = !winery || w.winery === winery;
+                const matchGrape = !grape || w.grape === grape;
+                const matchYear = !year || w.year == year;
+                const matchPrice = isNaN(maxPrice) || (w.price && w.price <= maxPrice);
+
+                return matchSearch && matchLoc && matchType && matchWinery && matchGrape && matchYear && matchPrice;
+            });
+
+            container.innerHTML = filtered.length ? filtered.map(w => createWineCardHTML(w)).join('') : '<p>Keine Weine gefunden.</p>';
+        }
+
+        function renderTastingList() {
+            const container = document.getElementById('tasting-container');
+            const starredWines = wines.filter(w => w.starred);
+            container.innerHTML = starredWines.length ? starredWines.map(w => createWineCardHTML(w)).join('') : '<p>Keine Weine für die Verkostung markiert.</p>';
+        }
+
+        function createWineCardHTML(w) {
+            const placeholderImg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="90" height="120" viewBox="0 0 90 120"><rect width="100%" height="100%" fill="%23eee"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23aaa" font-size="20">🍷</text></svg>';
+            
+            return `
+                <div class="card wine-card">
+                    <span class="star-toggle ${w.starred ? 'active' : ''}" onclick="toggleStar('${w.id}')">★</span>
+                    <img src="${w.image || placeholderImg}" class="wine-thumb" alt="Label">
+                    <div class="wine-details">
+                        <div>
+                            <div class="wine-title">${escapeHtml(w.name)}</div>
+                            <div class="wine-meta">${escapeHtml(w.winery || 'Unbekanntes Weingut')} ${w.year ? `(${w.year})` : ''}</div>
+                            <div style="margin: 0.3rem 0;">
+                                ${w.type ? `<span class="wine-badge">${escapeHtml(w.type)}</span>` : ''}
+                                ${w.grape ? `<span class="wine-badge">${escapeHtml(w.grape)}</span>` : ''}
+                                ${w.location ? `<span class="wine-badge" style="background:#e0d8d0;">📍 ${escapeHtml(w.location)}</span>` : ''}
+                            </div>
+                            <div class="wine-meta">
+                                ${w.price ? `💰 ${w.price.toFixed(2)} € | ` : ''} 
+                                ${w.drinkable ? `⏳ Genuss: ${escapeHtml(w.drinkable)}` : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="wine-actions">
+                            <span style="font-weight:bold; font-size: 0.9rem;">Bestand: ${w.quantity}</span>
+                            <button class="btn btn-sm btn-secondary" onclick="changeQuantity('${w.id}', -1)" title="Flasche öffnen">-1 Fl.</button>
+                            <button class="btn btn-sm btn-secondary" onclick="changeQuantity('${w.id}', 1)" title="Flasche einlagern">+1 Fl.</button>
+                            <button class="btn btn-sm" onclick="editWine('${w.id}')">✏️</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteWine('${w.id}')">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- ZWISCHENABLAGE & KI PROMPT ---
+        function copyAiPrompt() {
+            navigator.clipboard.writeText(AI_PROMPT_TEXT).then(() => {
+                alert("KI-Prompt wurde in die Zwischenablage kopiert! Nutze diesen Prompt zusammen mit einem Foto des Etiketts in deiner KI-App.");
+            }).catch(err => {
+                alert("Fehler beim Kopieren: " + err);
+            });
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                // Versuche JSON aus dem Text zu parsen
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) {
+                    alert("Kein gültiges JSON in der Zwischenablage gefunden.");
+                    return;
+                }
+                
+                const data = JSON.parse(jsonMatch[0]);
+                
+                if (data.name) document.getElementById('field-name').value = data.name;
+                if (data.winery) document.getElementById('field-winery').value = data.winery;
+                if (data.type) document.getElementById('field-type').value = data.type;
+                if (data.grape) document.getElementById('field-grape').value = data.grape;
+                if (data.year) document.getElementById('field-year').value = data.year;
+                if (data.price) document.getElementById('field-price').value = data.price;
+                if (data.drinkable) document.getElementById('field-drinkable').value = data.drinkable;
+                if (data.notes) document.getElementById('field-notes').value = data.notes;
+
+                alert("Daten erfolgreich aus der Zwischenablage eingefügt!");
+            } catch (err) {
+                alert("Fehler beim Auslesen der Zwischenablage: " + err);
+            }
+        }
+
+        // --- EXPORT / IMPORT ---
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ wines, locations }));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `weinkeller_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const imported = JSON.parse(event.target.result);
+                    if (imported.wines && Array.isArray(imported.wines)) {
+                        wines = imported.wines;
+                        if (imported.locations) locations = imported.locations;
+                        localStorage.setItem('my_wines', JSON.stringify(wines));
+                        localStorage.setItem('my_wine_locations', JSON.stringify(locations));
+                        updateLocationDropdowns();
+                        renderList();
+                        alert("Daten erfolgreich importiert!");
+                    } else {
+                        alert("Ungültiges Dateiformat.");
+                    }
+                } catch (err) {
+                    alert("Fehler beim Importieren: " + err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- HELPER ---
+        function escapeHtml(str) {
+            return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        // --- PWA SETUP (MANIFEST & SERVICE WORKER VIA DATA URIS) ---
+        function initPWA() {
+            // Dynamic Web App Manifest
+            const manifest = {
+                "name": "Weinkeller Verwalter",
+                "short_name": "Weinkeller",
+                "start_url": ".",
+                "display": "standalone",
+                "background_color": "#f8f5f2",
+                "theme_color": "#722f37",
+                "icons": [{
+                    "src": "https://cdn-icons-png.flaticon.com/512/2738/2738808.png",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }]
+            };
+            const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+            document.getElementById('manifest-placeholder').setAttribute('href', URL.createObjectURL(manifestBlob));
+
+            // Minimal Inline Service Worker für Offline-Fähigkeit
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    const CACHE_NAME = 'weinkeller-v1';
+                    self.addEventListener('install', e => {
+                        e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(['./'])));
+                    });
+                    self.addEventListener('fetch', e => {
+                        e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+                    });
+                `;
+                const swBlob = new Blob([swCode], {type: 'application/javascript'});
+                navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+            }
+        }
+    </script>
 </body>
 </html>
