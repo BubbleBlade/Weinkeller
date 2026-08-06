@@ -11,10 +11,46 @@
   <meta name="apple-mobile-web-app-title" content="Weinkeller" />
   <meta name="description" content="Digitaler Weinkeller mit Bestandsverwaltung, Statistiken und KI-Etikett-Erkennung." />
 
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
+  <script>
+    (function setupPWAAssets() {
+      // Inline SVG App-Icon (Minimalistisches Weinglas-Design)
+      const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="512" fill="#121212"/><path d="M170 410h172M256 290v120M256 290a130 130 0 0 0 130-130c0-37-18-74-55-93H181c-37 19-55 56-55 93a130 130 0 0 0 130 130z" stroke="#FFFFFF" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>`;
+      const iconDataUrl = "data:image/svg+xml;base64," + btoa(svgIcon);
+
+      // Dynamic Manifest
+      const manifestObj = {
+        name: "Weinkeller by Bubbleblade",
+        short_name: "Weinkeller",
+        description: "Digitaler Weinkeller mit Bestandsverwaltung, Statistiken und KI-Etikett-Erkennung.",
+        start_url: "./",
+        display: "standalone",
+        background_color: "#121212",
+        theme_color: "#121212",
+        icons: [
+          { src: iconDataUrl, sizes: "192x192 512x512", type: "image/svg+xml", purpose: "any maskable" }
+        ]
+      };
+
+      const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: "application/manifest+json" });
+      const manifestUrl = URL.createObjectURL(manifestBlob);
+
+      const linkManifest = document.createElement("link");
+      linkManifest.rel = "manifest";
+      linkManifest.href = manifestUrl;
+      document.head.appendChild(linkManifest);
+
+      const linkIcon = document.createElement("link");
+      linkIcon.rel = "apple-touch-icon";
+      linkIcon.href = iconDataUrl;
+      document.head.appendChild(linkIcon);
+
+      const linkFavicon = document.createElement("link");
+      linkFavicon.rel = "icon";
+      linkFavicon.type = "image/svg+xml";
+      linkFavicon.href = iconDataUrl;
+      document.head.appendChild(linkFavicon);
+    })();
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -566,7 +602,6 @@ Regeln:
       const [page, setPage] = useState("main");
       const [query, setQuery] = useState("");
       
-      // Filter-States für ALLE editierbaren Felder außer Notizen
       const [nameFilter, setNameFilter] = useState("Alle");
       const [wineryFilter, setWineryFilter] = useState("Alle");
       const [vintageFilter, setVintageFilter] = useState("Alle");
@@ -987,7 +1022,7 @@ Regeln:
           )
         ),
 
-        /* ---------------- STATISTIK-SEITE ---------------- */
+        /* STATISTIK-SEITE */
         page === "stats" && e("main", { className: "max-w-5xl px-4 py-6" },
           e("div", { className: "flex flex-col gap-4" },
             wines.length === 0
@@ -1071,7 +1106,7 @@ Regeln:
           )
         ),
 
-        /* ---------------- HAUPTSEITE ---------------- */
+        /* HAUPTSEITE */
         page === "main" && e(React.Fragment, null,
           e("div", { className: "max-w-5xl px-4 pt-4" },
             e("div", { className: "flex flex-wrap items-center gap-2" },
@@ -1106,7 +1141,7 @@ Regeln:
               )
             ),
 
-            /* Erweiterte Filter-Leiste für ALLE Felder (außer Notizen) */
+            /* Erweiterte Filter-Leiste */
             showFilters && e("div", {
               className: "flex flex-wrap items-center gap-2",
               style: { marginTop: 10, padding: 12, background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: 10 }
@@ -1354,7 +1389,7 @@ Regeln:
           )
         ),
 
-        /* Import Modal: Ersetzen / Abbrechen */
+        /* Import Modal */
         pendingImport && e("div", {
           style: {
             position: "fixed", inset: 0, background: "rgba(0, 0, 0, 0.8)",
@@ -1413,7 +1448,7 @@ Regeln:
         e("div", {
           style: {
             background: "var(--bg-input)", borderTop: "1px solid var(--border-color)", padding: "6px 12px",
-            display: "flex", alignItems: "center", justifyContent: "space-between"
+            display: "flex", alignItems: "center", justifyContent: "between"
           }
         },
           e("span", { style: { fontSize: 11, color: "var(--text-muted)" } }, `Getrunken: ${w.consumed || 0}`),
@@ -1437,13 +1472,50 @@ Regeln:
     const root = ReactDOM.createRoot(document.getElementById("root"));
     root.render(e(WeinkellerApp));
 
-    // --- PWA: Service Worker registrieren ---
+    // --- PWA Service Worker Inlining & Registrierung ---
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
-        const swUrl = new URL("sw.js", window.location.href);
-        navigator.serviceWorker.register(swUrl).catch((err) => {
-          console.warn("Service Worker Registrierung fehlgeschlagen:", err);
-        });
+        const swCode = `
+          const CACHE_NAME = 'weinkeller-v1';
+          const ASSETS = [
+            './',
+            'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Permanent+Marker&display=swap',
+            'https://unpkg.com/react@18/umd/react.production.min.js',
+            'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js'
+          ];
+
+          self.addEventListener('install', (e) => {
+            e.waitUntil(
+              caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+            );
+          });
+
+          self.addEventListener('activate', (e) => {
+            e.waitUntil(
+              caches.keys().then((keys) =>
+                Promise.all(keys.map((k) => k !== CACHE_NAME && caches.delete(k)))
+              ).then(() => self.clients.claim())
+            );
+          });
+
+          self.addEventListener('fetch', (e) => {
+            e.respondWith(
+              caches.match(e.request).then((res) => res || fetch(e.request).then((netRes) => {
+                return caches.open(CACHE_NAME).then((cache) => {
+                  cache.put(e.request, netRes.clone());
+                  return netRes;
+                });
+              })).catch(() => caches.match('./'))
+            );
+          });
+        `;
+
+        const swBlob = new Blob([swCode], { type: "text/javascript" });
+        const swUrl = URL.createObjectURL(swBlob);
+
+        navigator.serviceWorker.register(swUrl)
+          .then(() => console.log("Inline PWA Service Worker erfolgreich registriert."))
+          .catch((err) => console.warn("Service Worker Registrierung fehlgeschlagen:", err));
       });
     }
   </script>
