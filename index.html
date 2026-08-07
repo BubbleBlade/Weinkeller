@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111214">
+<meta name="description" content="Schneller digitaler Weinkeller">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Weinkeller">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Weinkeller</title>
+<script>
+(()=>{const m={name:"Weinkeller",short_name:"Weinkeller",start_url:"./",scope:"./",display:"standalone",background_color:"#111214",theme_color:"#111214",description:"Digitaler Weinkeller",icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%23111214'/%3E%3Cpath d='M170 100h172c0 110-38 164-86 190v122M170 100c0 110 38 164 86 190M150 412h212' fill='none' stroke='%23d9a85c' stroke-width='28' stroke-linecap='round'/%3E%3C/svg%3E",sizes:"512x512",type:"image/svg+xml",purpose:"any maskable"}]};const u=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:"application/manifest+json"}));const l=document.createElement("link");l.rel="manifest";l.href=u;document.head.appendChild(l);const i=document.createElement("link");i.rel="apple-touch-icon";i.href=m.icons[0].src;document.head.appendChild(i)})();
+</script>
+
+<style>
+:root{color-scheme:dark;--bg:#111214;--panel:#1b1d21;--panel2:#23262b;--text:#f5f5f5;--muted:#aeb3bb;--line:#34383f;--accent:#d9a85c;--danger:#e56b6f}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}
+body{min-height:100vh}.app{max-width:1200px;margin:auto;padding:18px 16px 80px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}h1{font-size:clamp(25px,6vw,38px);margin:0}.sub{color:var(--muted);margin-top:3px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:11px 14px;border-radius:12px;font-weight:700}.btn.primary{background:var(--accent);color:#17130d;border-color:var(--accent)}.btn.danger{color:#fff;border-color:#71383b}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}.stat,.card{background:var(--panel);border:1px solid var(--line);border-radius:16px}.stat{padding:15px}.stat b{display:block;font-size:25px}.stat span{color:var(--muted);font-size:13px}
+.toolbar{display:grid;grid-template-columns:1fr auto auto;gap:9px;margin-bottom:14px}.input,.select,.textarea{width:100%;background:#15171a;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:12px}.textarea{min-height:90px;resize:vertical}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}.wine{overflow:hidden}.wine img{width:100%;height:180px;object-fit:cover;background:#101113}.winebody{padding:14px}.wine h3{margin:0 0 5px;font-size:19px}.muted{color:var(--muted)}.tags{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0}.tag{font-size:12px;padding:4px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+.winefoot{display:flex;justify-content:space-between;align-items:center;margin-top:12px}.rating{font-weight:800;color:var(--accent)}
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.modal{position:fixed;inset:0;background:#000b;display:none;align-items:flex-end;justify-content:center;padding:10px;z-index:10}.modal.open{display:flex}.sheet{width:min(760px,100%);max-height:94vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:18px}.sheet h2{margin-top:0}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field.full{grid-column:1/-1}.field label{display:block;color:var(--muted);font-size:12px;margin:0 0 5px}.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:15px}
+.notice{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#f5f5f5;color:#111;padding:10px 15px;border-radius:999px;font-weight:700;display:none;z-index:20}.notice.show{display:block}
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr 1fr}.toolbar .input{grid-column:1/-1}.form{grid-template-columns:1fr}.field.full{grid-column:auto}header{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions .btn{flex:1}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div><h1>🍷 Weinkeller</h1><div class="sub">Dein digitaler Weinkeller</div></div>
+  <div class="actions"><button class="btn" id="exportBtn">Export</button><button class="btn" id="importBtn">Import</button><input id="fileInput" type="file" accept=".json,application/json" hidden><button class="btn primary" id="addBtn">＋ Wein</button></div>
+</header>
+<section class="stats">
+ <div class="stat"><b id="sBottles">0</b><span>Flaschen</span></div><div class="stat"><b id="sWines">0</b><span>Weine</span></div><div class="stat"><b id="sValue">0 €</b><span>Kellerwert</span></div><div class="stat"><b id="sRating">–</b><span>Ø Bewertung</span></div>
+</section>
+<div class="toolbar">
+ <input class="input" id="search" placeholder="Suche nach Wein, Weingut, Lage, Rebsorte …">
+ <select class="select" id="type"><option value="">Alle Arten</option><option>Rot</option><option>Weiß</option><option>Rosé</option><option>Schaumwein</option><option>Süßwein</option></select>
+ <select class="select" id="sort"><option value="created">Neueste</option><option value="name">Name</option><option value="vintage">Jahrgang</option><option value="price">Preis</option><option value="rating">Bewertung</option></select>
+</div>
+<main id="list" class="grid"></main>
+</div>
+
+<div class="modal" id="modal"><div class="sheet">
+<h2 id="modalTitle">Wein hinzufügen</h2>
+<form id="form" class="form">
+<input type="hidden" id="id">
+<div class="field"><label>Name</label><input class="input" id="name" required></div>
+<div class="field"><label>Weingut / Erzeuger</label><input class="input" id="winery"></div>
+<div class="field"><label>Jahrgang</label><input class="input" id="vintage" type="number" min="1800" max="2100"></div>
+<div class="field"><label>Rebsorte</label><input class="input" id="grape"></div>
+<div class="field"><label>Region</label><input class="input" id="region"></div>
+<div class="field"><label>Lage</label><input class="input" id="vineyard"></div>
+<div class="field"><label>Land</label><input class="input" id="country"></div>
+<div class="field"><label>Weinart</label><select class="select" id="wineType"><option>Rot</option><option>Weiß</option><option>Rosé</option><option>Schaumwein</option><option>Süßwein</option></select></div>
+<div class="field"><label>Menge</label><input class="input" id="quantity" type="number" min="0" step="1" value="1"></div>
+<div class="field"><label>Preis € / Flasche</label><input class="input" id="price" type="number" min="0" step="0.01"></div>
+<div class="field"><label>Bewertung (0–100)</label><input class="input" id="rating" type="number" min="0" max="100" step="1"></div>
+<div class="field"><label>Lagerort</label><input class="input" id="location"></div>
+<div class="field"><label>Trinkfenster</label><input class="input" id="drinkWindow" placeholder="z. B. 2028–2040"></div>
+<div class="field"><label>Alkohol %</label><input class="input" id="alcohol" type="number" min="0" max="30" step="0.1"></div>
+<div class="field full"><label>Notizen</label><textarea class="textarea" id="notes"></textarea></div>
+<div class="field full"><label>Etikettfoto</label><input class="input" id="image" type="file" accept="image/*"></div>
+<div class="form-actions field full"><button type="button" class="btn" id="cancelBtn">Abbrechen</button><button class="btn primary" type="submit">Speichern</button></div>
+</form></div></div>
+<div class="notice" id="notice"></div>
+
+<script>
+const KEY="weinkeller-v2";
+let wines=load();
+const $=id=>document.getElementById(id);
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch{return[]}}
+function save(){localStorage.setItem(KEY,JSON.stringify(wines))}
+function uid(){return Date.now().toString(36)+"-"+Math.random().toString(36).slice(2)}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function money(v){return Number(v||0).toLocaleString("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:0})}
+function toast(t){$("notice").textContent=t;$("notice").classList.add("show");setTimeout(()=>$("notice").classList.remove("show"),1800)}
+function render(){
+ const q=$("search").value.trim().toLowerCase(), type=$("type").value, sort=$("sort").value;
+ let a=wines.filter(w=>!type||w.type===type).filter(w=>!q||[w.name,w.winery,w.vineyard,w.grape,w.region,w.country].join(" ").toLowerCase().includes(q));
+ a.sort((x,y)=>sort==="name"?x.name.localeCompare(y.name):sort==="vintage"?(Number(y.vintage)||0)-(Number(x.vintage)||0):sort==="price"?(Number(y.price)||0)-(Number(x.price)||0):sort==="rating"?(Number(y.rating)||0)-(Number(x.rating)||0):(y.createdAt||0)-(x.createdAt||0));
+ $("list").innerHTML=a.length?a.map(card).join(""):`<div class="card empty" style="grid-column:1/-1">${wines.length?"Keine passenden Weine gefunden.":"Dein Keller ist noch leer.<br><br><button class='btn primary' onclick='openNew()'>Ersten Wein anlegen</button>"}</div>`;
+ const bottles=wines.reduce((s,w)=>s+(Number(w.quantity)||0),0), rated=wines.filter(w=>Number(w.rating)>0);
+ $("sBottles").textContent=bottles;$("sWines").textContent=wines.length;$("sValue").textContent=money(wines.reduce((s,w)=>s+(Number(w.price)||0)*(Number(w.quantity)||0),0));
+ $("sRating").textContent=rated.length?(rated.reduce((s,w)=>s+Number(w.rating),0)/rated.length).toFixed(1):"–";
+}
+function card(w){return `<article class="card wine">${w.image?`<img src="${w.image}" alt="">`:""}<div class="winebody"><h3>${esc(w.name)}</h3><div class="muted">${esc(w.winery)}${w.vintage?" · "+esc(w.vintage):""}</div><div class="tags">${w.type?`<span class=tag>${esc(w.type)}</span>`:""}${w.grape?`<span class=tag>${esc(w.grape)}</span>`:""}${w.vineyard?`<span class=tag>${esc(w.vineyard)}</span>`:""}</div><div class="muted">${esc(w.region)}${w.country?" · "+esc(w.country):""}</div><div class="winefoot"><span>${Number(w.quantity)||0} Fl. · ${money(w.price)}</span><span class=rating>${w.rating?esc(w.rating)+"/100":"–"}</span></div><div class="winefoot"><button class="btn" onclick="editWine('${w.id}')">Bearbeiten</button><button class="btn danger" onclick="removeWine('${w.id}')">Löschen</button></div></div></article>`}
+function openNew(){fill({id:uid(),type:"Rot",quantity:1,rating:0});$("modalTitle").textContent="Wein hinzufügen";$("modal").classList.add("open")}
+function fill(w){["id","name","winery","vintage","grape","region","vineyard","country","quantity","price","rating","location","drinkWindow","alcohol","notes"].forEach(k=>$(k).value=w[k]??"");$("wineType").value=w.type||"Rot"}
+function editWine(id){const w=wines.find(x=>x.id===id);if(!w)return;fill(w);$("modalTitle").textContent="Wein bearbeiten";$("modal").classList.add("open")}
+function close(){ $("modal").classList.remove("open");$("form").reset() }
+function removeWine(id){if(!confirm("Diesen Wein wirklich löschen?"))return;wines=wines.filter(w=>w.id!==id);save();render();toast("Wein gelöscht")}
+$("form").addEventListener("submit",async e=>{e.preventDefault();const id=$("id").value;let old=wines.find(w=>w.id===id)||{};let image=old.image||null;const f=$("image").files[0];if(f)image=await resizeImage(f);
+ const w={id,name:$("name").value.trim(),winery:$("winery").value.trim(),vintage:$("vintage").value,grape:$("grape").value.trim(),region:$("region").value.trim(),vineyard:$("vineyard").value.trim(),country:$("country").value.trim(),type:$("wineType").value,quantity:Number($("quantity").value)||0,price:Number($("price").value)||0,rating:Number($("rating").value)||0,location:$("location").value.trim(),drinkWindow:$("drinkWindow").value.trim(),alcohol:Number($("alcohol").value)||0,notes:$("notes").value.trim(),image,createdAt:old.createdAt||Date.now()};
+ const i=wines.findIndex(x=>x.id===id);if(i>=0)wines[i]=w;else wines.unshift(w);save();close();render();toast("Gespeichert")});
+async function resizeImage(file){return new Promise(res=>{const im=new Image(),c=document.createElement("canvas"),r=new FileReader();r.onload=()=>{im.onload=()=>{const max=900,s=Math.min(1,max/Math.max(im.width,im.height));c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);res(c.toDataURL("image/jpeg",.78))};im.src=r.result};r.readAsDataURL(file)})}
+$("addBtn").onclick=openNew;$("cancelBtn").onclick=close;$("modal").onclick=e=>{if(e.target===$("modal"))close()};["search","type","sort"].forEach(id=>$(id).addEventListener("input",render));
+$("exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify(wines,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="weinkeller-backup.json";a.click();URL.revokeObjectURL(a.href);toast("Export erstellt")}
+$("importBtn").onclick=()=>$("fileInput").click();
+$("fileInput").onchange=()=>{const f=$("fileInput").files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!Array.isArray(x))throw 0;wines=x;save();render();toast("Import erfolgreich")}catch{alert("Ungültige JSON-Datei")}};r.readAsText(f)}
+render();
+if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(console.error));
+</script>
+</body>
+</html>
