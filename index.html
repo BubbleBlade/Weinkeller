@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>By BubbleBlade - Weinkeller PWA</title>
+    <meta name="theme-color" content="#121212">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent: #d4af37;
+            --text: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border: #333333;
+            --danger: #cf6679;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text); padding-bottom: 75px; }
+        header { background: var(--card-bg); padding: 15px; text-align: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+        header h1 { font-size: 1.4rem; font-weight: 300; letter-spacing: 2px; color: var(--accent); }
+        nav { display: flex; justify-content: space-around; background: var(--card-bg); position: fixed; bottom: 0; width: 100%; border-top: 1px solid var(--border); z-index: 100; }
+        nav button { background: none; border: none; color: var(--text-muted); padding: 10px 4px; font-size: 0.75rem; flex: 1; cursor: pointer; }
+        nav button.active { color: var(--accent); font-weight: bold; }
+        .container { padding: 15px; max-width: 600px; margin: 0 auto; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card { background: var(--card-bg); border-radius: 8px; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border); display: flex; gap: 15px; }
+        .card img { width: 70px; height: 90px; object-fit: cover; border-radius: 4px; background: #2a2a2a; }
+        .card-info { flex: 1; }
+        .card-title { font-size: 1.1rem; color: #fff; margin-bottom: 4px; }
+        .card-sub { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+        .stars { color: var(--accent); font-size: 0.9rem; }
+        .badge { display: inline-block; padding: 2px 6px; font-size: 0.75rem; border-radius: 4px; background: #2a2a2a; border: 1px solid var(--border); margin-right: 5px; }
+        .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        button.btn { background: #2a2a2a; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+        button.btn-accent { background: var(--accent); color: #000; border: none; font-weight: bold; }
+        button.btn-danger { background: var(--danger); color: #fff; border: none; }
+        form .group { margin-bottom: 12px; }
+        form label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px; }
+        form input, form select, form textarea { width: 100%; padding: 8px; background: #2a2a2a; border: 1px solid var(--border); color: var(--text); border-radius: 4px; }
+        .star-rating { display: flex; gap: 5px; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
+        .star-rating .star.selected { color: var(--accent); }
+        
+        /* Stats Styling */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-box { background: var(--card-bg); border: 1px solid var(--border); padding: 12px; border-radius: 8px; text-align: center; }
+        .stat-val { font-size: 1.4rem; color: var(--accent); font-weight: bold; margin-top: 4px; }
+        .stat-lbl { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-list { list-style: none; padding: 0; font-size: 0.85rem; }
+        .stat-list li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #2a2a2a; }
+        .stat-list li:last-child { border-bottom: none; }
+        
+        /* Pagination / Load More */
+        .load-more-container { text-align: center; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>By BubbleBlade</h1>
+    </header>
+
+    <div class="container">
+        <!-- WEINKELLER TAB -->
+        <div id="tab-keller" class="tab-content active">
+            <input type="text" id="search-input" placeholder="Wein, Weingut, Jahrgang, Ort..." oninput="debounceSearch()" style="width:100%; padding:10px; margin-bottom:15px; background:#1e1e1e; border:1px solid #333; color:#fff; border-radius:4px;">
+            <div id="wine-list"></div>
+            <div class="load-more-container">
+                <button id="btn-load-more" class="btn" onclick="loadMoreWines()" style="display:none; width:100%;">Mehr Weine laden...</button>
+            </div>
+        </div>
+
+        <!-- WEINPROBE TAB -->
+        <div id="tab-probe" class="tab-content">
+            <h2 style="font-weight:300; margin-bottom:15px; color:var(--accent);">Gemerkte Weine für nächste Probe</h2>
+            <div id="probe-list"></div>
+        </div>
+
+        <!-- STATISTIK TAB -->
+        <div id="tab-stats" class="tab-content">
+            <h2 style="font-weight:300; margin-bottom:15px; color:var(--accent);">Keller-Statistiken</h2>
+            
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-lbl">Gesamtflaschen</div>
+                    <div class="stat-val" id="st-total-qty">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-lbl">Weinsorten</div>
+                    <div class="stat-val" id="st-total-titles">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-lbl">Gesamtwert</div>
+                    <div class="stat-val" id="st-total-val">0,00 €</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-lbl">Ø Preis / Flasche</div>
+                    <div class="stat-val" id="st-avg-price">0,00 €</div>
+                </div>
+            </div>
+
+            <div class="card" style="display:block; margin-bottom:15px;">
+                <h3 style="font-size:0.95rem; color:var(--accent); margin-bottom:8px;">Verteilung nach Weinart</h3>
+                <ul class="stat-list" id="st-type-list"></ul>
+            </div>
+
+            <div class="card" style="display:block; margin-bottom:15px;">
+                <h3 style="font-size:0.95rem; color:var(--accent); margin-bottom:8px;">Top Jahrgänge</h3>
+                <ul class="stat-list" id="st-vintage-list"></ul>
+            </div>
+
+            <div class="card" style="display:block; margin-bottom:15px;">
+                <h3 style="font-size:0.95rem; color:var(--accent); margin-bottom:8px;">Preisspannen</h3>
+                <ul class="stat-list" id="st-price-list"></ul>
+            </div>
+
+            <div class="card" style="display:block;">
+                <h3 style="font-size:0.95rem; color:var(--accent); margin-bottom:8px;">Verteilung nach Lagerort</h3>
+                <ul class="stat-list" id="st-loc-list"></ul>
+            </div>
+        </div>
+
+        <!-- WEIN HINZUFÜGEN TAB -->
+        <div id="tab-add" class="tab-content">
+            <h2 style="font-weight:300; margin-bottom:15px; color:var(--accent);">Neuen Wein anlegen</h2>
+            
+            <div style="margin-bottom:20px; display:flex; flex-direction:column; gap:10px;">
+                <button class="btn btn-accent" style="width:100%; padding:12px;" onclick="readFromClipboard()">📋 Daten direkt aus Zwischenablage einlesen</button>
+                <button class="btn" style="width:100%;" onclick="copyAIPrompt()">⚙️ KI-Prompt für Etikett kopieren</button>
+            </div>
+
+            <form id="wine-form" onsubmit="saveWine(event)">
+                <div class="group">
+                    <label>Name des Weins / Weingut</label>
+                    <input type="text" id="w-name" required>
+                </div>
+                <div class="group">
+                    <label>Weinart</label>
+                    <select id="w-type"></select>
+                </div>
+                <div class="group">
+                    <label>Jahrgang</label>
+                    <select id="w-vintage"></select>
+                </div>
+                <div class="group">
+                    <label>Lagerort</label>
+                    <select id="w-location"></select>
+                </div>
+                <div class="group">
+                    <label>Preis pro Flasche (€)</label>
+                    <input type="number" id="w-price" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div class="group">
+                    <label>Anzahl Flaschen</label>
+                    <input type="number" id="w-qty" min="0" value="1">
+                </div>
+                <div class="group">
+                    <label>Bewertung (1-5 Sterne)</label>
+                    <div class="star-rating" id="star-input">
+                        <span class="star" onclick="setRating(1)">★</span>
+                        <span class="star" onclick="setRating(2)">★</span>
+                        <span class="star" onclick="setRating(3)">★</span>
+                        <span class="star" onclick="setRating(4)">★</span>
+                        <span class="star" onclick="setRating(5)">★</span>
+                    </div>
+                </div>
+                <div class="group">
+                    <label>Etikett / Bild (Thumbnail max. 120px)</label>
+                    <input type="file" id="w-img" accept="image/*" onchange="handleImageUpload(event)">
+                    <input type="hidden" id="w-img-base64">
+                </div>
+                <button type="submit" class="btn btn-accent" style="width:100%; padding:10px;">Wein Speichern</button>
+            </form>
+        </div>
+
+        <!-- EINSTELLUNGEN TAB -->
+        <div id="tab-settings" class="tab-content">
+            <h2 style="font-weight:300; margin-bottom:15px; color:var(--accent);">Einstellungen & Daten</h2>
+            
+            <div class="card" style="display:block;">
+                <h3>Lagerorte verwalten</h3>
+                <div style="display:flex; gap:10px; margin:10px 0;">
+                    <input type="text" id="new-location" placeholder="z.B. Regal 1, Fach B">
+                    <button class="btn" onclick="addSetting('locations', 'new-location')">Hinzufügen</button>
+                </div>
+                <ul id="location-list" style="padding-left:20px; font-size:0.9rem;"></ul>
+            </div>
+
+            <div class="card" style="display:block;">
+                <h3>Weinarten verwalten</h3>
+                <div style="display:flex; gap:10px; margin:10px 0;">
+                    <input type="text" id="new-type" placeholder="z.B. Champagner, Rotwein">
+                    <button class="btn" onclick="addSetting('types', 'new-type')">Hinzufügen</button>
+                </div>
+                <ul id="type-list" style="padding-left:20px; font-size:0.9rem;"></ul>
+            </div>
+
+            <div class="card" style="display:block;">
+                <h3>Export & Backup</h3>
+                <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+                    <button class="btn" onclick="exportJSON()">JSON Backup Exportieren (inkl. Bilder)</button>
+                    <button class="btn" onclick="exportCellarCSV()">Gesamten Weinkeller als CSV Exportieren</button>
+                    <button class="btn" onclick="exportHistoryCSV()">Getrunkene Flaschen als CSV Exportieren</button>
+                    <button class="btn" onclick="document.getElementById('import-file').click()">JSON Backup Importieren</button>
+                    <input type="file" id="import-file" style="display:none" onchange="importJSON(event)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav>
+        <button id="nav-keller" class="active" onclick="switchTab('keller')">Keller</button>
+        <button id="nav-probe" onclick="switchTab('probe')">Probe</button>
+        <button id="nav-stats" onclick="switchTab('stats')">Statistik</button>
+        <button id="nav-add" onclick="switchTab('add')">+ Wein</button>
+        <button id="nav-settings" onclick="switchTab('settings')">Optionen</button>
+    </nav>
+
+    <script>
+        let db = {
+            wines: JSON.parse(localStorage.getItem('bb_wines')) || [],
+            history: JSON.parse(localStorage.getItem('bb_history')) || [],
+            settings: JSON.parse(localStorage.getItem('bb_settings')) || {
+                locations: ['Keller Regal A', 'Regal B', 'Weinkühlschrank'],
+                types: ['Rotwein', 'Weißwein', 'Rosé', 'Champagner / Schaumwein', 'Dessertwein']
+            }
+        };
+
+        let currentRating = 0;
+        let renderedCount = 0;
+        const PAGE_SIZE = 30; // Performantes Rendern bei vielen Weinen
+        let searchDebounceTimeout = null;
+
+        function saveState() {
+            try {
+                localStorage.setItem('bb_wines', JSON.stringify(db.wines));
+                localStorage.setItem('bb_history', JSON.stringify(db.history));
+                localStorage.setItem('bb_settings', JSON.stringify(db.settings));
+            } catch(e) {
+                alert('Speicherplatz überschritten! Bitte sichere alte Daten oder verkleinere hochgeladene Bilder.');
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('nav-' + tab).classList.add('active');
+            if(tab === 'keller') resetAndRenderWines();
+            if(tab === 'probe') renderProbe();
+            if(tab === 'stats') renderStats();
+            if(tab === 'settings') renderSettings();
+            if(tab === 'add') populateDropdowns();
+        }
+
+        function setRating(r) {
+            currentRating = r;
+            document.querySelectorAll('#star-input .star').forEach((s, idx) => {
+                s.style.color = idx < r ? 'var(--accent)' : 'var(--text-muted)';
+            });
+        }
+
+        function populateDropdowns() {
+            const vintageSelect = document.getElementById('w-vintage');
+            vintageSelect.innerHTML = '<option value="NV">ohne Jahrgang (NV)</option>';
+            const curYear = new Date().getFullYear();
+            for(let y = curYear; y >= 1950; y--) {
+                vintageSelect.innerHTML += `<option value="${y}">${y}</option>`;
+            }
+
+            const typeSelect = document.getElementById('w-type');
+            typeSelect.innerHTML = db.settings.types.map(t => `<option value="${t}">${t}</option>`).join('');
+
+            const locSelect = document.getElementById('w-location');
+            locSelect.innerHTML = db.settings.locations.map(l => `<option value="${l}">${l}</option>`).join('');
+        }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 120;
+                    canvas.height = 160;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, 120, 160);
+                    // Komprimierung auf 0.6 für hohe Effizienz bei großen Weinsammlungen
+                    document.getElementById('w-img-base64').value = canvas.toDataURL('image/jpeg', 0.6);
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveWine(e) {
+            e.preventDefault();
+            const priceVal = parseFloat(document.getElementById('w-price').value);
+            const newWine = {
+                id: Date.now(),
+                name: document.getElementById('w-name').value,
+                type: document.getElementById('w-type').value,
+                vintage: document.getElementById('w-vintage').value,
+                location: document.getElementById('w-location').value,
+                price: isNaN(priceVal) ? 0 : priceVal,
+                qty: parseInt(document.getElementById('w-qty').value) || 1,
+                rating: currentRating,
+                img: document.getElementById('w-img-base64').value,
+                markedForProbe: false
+            };
+            db.wines.unshift(newWine); // Neue Weine oben anzeigen
+            saveState();
+            document.getElementById('wine-form').reset();
+            currentRating = 0;
+            setRating(0);
+            switchTab('keller');
+        }
+
+        function debounceSearch() {
+            clearTimeout(searchDebounceTimeout);
+            searchDebounceTimeout = setTimeout(() => {
+                resetAndRenderWines();
+            }, 250);
+        }
+
+        function resetAndRenderWines() {
+            renderedCount = 0;
+            document.getElementById('wine-list').innerHTML = '';
+            loadMoreWines();
+        }
+
+        function loadMoreWines() {
+            const list = document.getElementById('wine-list');
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const filtered = db.wines.filter(w => w.name.toLowerCase().includes(search) || w.type.toLowerCase().includes(search) || w.location.toLowerCase().includes(search));
+
+            const batch = filtered.slice(renderedCount, renderedCount + PAGE_SIZE);
+            
+            const fragment = document.createDocumentFragment();
+            batch.forEach(w => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <img src="${w.img || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="70" height="90" viewBox="0 0 70 90"><rect width="70" height="90" fill="%232a2a2a"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23555" font-size="10">Kein Bild</text></svg>'}" alt="Label">
+                    <div class="card-info">
+                        <div class="card-title">${escapeHtml(w.name)}</div>
+                        <div class="card-sub">${escapeHtml(w.vintage)} • ${escapeHtml(w.type)} • 📍 ${escapeHtml(w.location)}</div>
+                        <div class="stars">${'★'.repeat(w.rating)}${'☆'.repeat(5-w.rating)}</div>
+                        <div style="margin-top:6px;">
+                            <span class="badge">Bestand: ${w.qty}</span>
+                            <span class="badge">${(w.price || 0).toFixed(2)} €</span>
+                        </div>
+                        <div class="actions">
+                            <button class="btn" onclick="changeQty(${w.id}, -1)">🍾 Öffnen (-1)</button>
+                            <button class="btn" onclick="changeQty(${w.id}, 1)">➕ Nachfüllen (+1)</button>
+                            <button class="btn ${w.markedForProbe ? 'btn-accent' : ''}" onclick="toggleProbe(${w.id})">📌 ${w.markedForProbe ? 'Gemerkt' : 'Merken'}</button>
+                        </div>
+                    </div>
+                `;
+                fragment.appendChild(card);
+            });
+
+            list.appendChild(fragment);
+            renderedCount += batch.length;
+
+            const btnLoadMore = document.getElementById('btn-load-more');
+            if (renderedCount < filtered.length) {
+                btnLoadMore.style.display = 'block';
+            } else {
+                btnLoadMore.style.display = 'none';
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function renderProbe() {
+            const list = document.getElementById('probe-list');
+            const marked = db.wines.filter(w => w.markedForProbe);
+            if(marked.length === 0) {
+                list.innerHTML = '<p style="color:var(--text-muted);">Keine Weine für die nächste Probe gemerkt.</p>';
+                return;
+            }
+            list.innerHTML = marked.map(w => `
+                <div class="card">
+                    <img src="${w.img || ''}">
+                    <div class="card-info">
+                        <div class="card-title">${escapeHtml(w.name)}</div>
+                        <div class="card-sub">${escapeHtml(w.vintage)} • ${escapeHtml(w.type)} • 📍 ${escapeHtml(w.location)}</div>
+                        <button class="btn btn-accent" onclick="toggleProbe(${w.id})">Entfernen</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderStats() {
+            let totalQty = 0;
+            let totalValue = 0;
+            let typeCounts = {};
+            let vintageCounts = {};
+            let locationCounts = {};
+            let priceBrackets = { '< 15 €': 0, '15 - 30 €': 0, '30 - 50 €': 0, '50 - 100 €': 0, '> 100 €': 0 };
+
+            db.wines.forEach(w => {
+                const qty = w.qty || 0;
+                const price = w.price || 0;
+                
+                totalQty += qty;
+                totalValue += (qty * price);
+
+                typeCounts[w.type] = (typeCounts[w.type] || 0) + qty;
+                vintageCounts[w.vintage] = (vintageCounts[w.vintage] || 0) + qty;
+                locationCounts[w.location] = (locationCounts[w.location] || 0) + qty;
+
+                if (price < 15) priceBrackets['< 15 €'] += qty;
+                else if (price <= 30) priceBrackets['15 - 30 €'] += qty;
+                else if (price <= 50) priceBrackets['30 - 50 €'] += qty;
+                else if (price <= 100) priceBrackets['50 - 100 €'] += qty;
+                else priceBrackets['> 100 €'] += qty;
+            });
+
+            document.getElementById('st-total-qty').innerText = totalQty;
+            document.getElementById('st-total-titles').innerText = db.wines.length;
+            document.getElementById('st-total-val').innerText = totalValue.toFixed(2) + ' €';
+            document.getElementById('st-avg-price').innerText = totalQty > 0 ? (totalValue / totalQty).toFixed(2) + ' €' : '0,00 €';
+
+            const renderList = (obj, elementId) => {
+                const el = document.getElementById(elementId);
+                const sorted = Object.entries(obj).sort((a,b) => b[1] - a[1]);
+                if (sorted.length === 0) {
+                    el.innerHTML = '<li style="color:var(--text-muted)">Keine Daten vorhanden</li>';
+                    return;
+                }
+                el.innerHTML = sorted.map(([k, v]) => `<li><span>${escapeHtml(k)}</span><b>${v} Fl.</b></li>`).join('');
+            };
+
+            renderList(typeCounts, 'st-type-list');
+            renderList(vintageCounts, 'st-vintage-list');
+            renderList(priceBrackets, 'st-price-list');
+            renderList(locationCounts, 'st-loc-list');
+        }
+
+        function changeQty(id, delta) {
+            const wine = db.wines.find(w => w.id === id);
+            if (!wine) return;
+            if (delta < 0 && wine.qty > 0) {
+                wine.qty--;
+                db.history.push({
+                    wineName: wine.name,
+                    vintage: wine.vintage,
+                    date: new Date().toISOString().split('T')[0]
+                });
+            } else if (delta > 0) {
+                wine.qty++;
+            }
+            saveState();
+            resetAndRenderWines();
+        }
+
+        function toggleProbe(id) {
+            const wine = db.wines.find(w => w.id === id);
+            if(wine) {
+                wine.markedForProbe = !wine.markedForProbe;
+                saveState();
+                resetAndRenderWines();
+                renderProbe();
+            }
+        }
+
+        function renderSettings() {
+            document.getElementById('location-list').innerHTML = db.settings.locations.map((l, i) => `<li>${escapeHtml(l)} <a href="#" onclick="removeSetting('locations', ${i})" style="color:var(--danger)">[x]</a></li>`).join('');
+            document.getElementById('type-list').innerHTML = db.settings.types.map((t, i) => `<li>${escapeHtml(t)} <a href="#" onclick="removeSetting('types', ${i})" style="color:var(--danger)">[x]</a></li>`).join('');
+        }
+
+        function addSetting(key, inputId) {
+            const val = document.getElementById(inputId).value.trim();
+            if(val) {
+                db.settings[key].push(val);
+                document.getElementById(inputId).value = '';
+                saveState();
+                renderSettings();
+            }
+        }
+
+        function removeSetting(key, idx) {
+            db.settings[key].splice(idx, 1);
+            saveState();
+            renderSettings();
+        }
+
+        function copyAIPrompt() {
+            const prompt = `Analysiere das Bild dieses Weinetiketts und erstelle exakt folgenden JSON-Code, ohne weiteren Text oder Markdown-Block:\n{\n  "name": "Name des Weins und Weinguts",\n  "type": "Rotwein/Weißwein/Rosé/Champagner",\n  "vintage": "Jahrgang als Zahl oder NV",\n  "location": "Lagerort falls erkennbar",\n  "price": 25.50,\n  "qty": 1,\n  "rating": 4\n}`;
+            navigator.clipboard.writeText(prompt).then(() => alert('KI-Prompt in Zwischenablage kopiert! Kamera-Bild in KI einfügen, Antwort kopieren und dann in der App "Aus Zwischenablage einlesen" drücken.'));
+        }
+
+        async function readFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text) {
+                    alert('Die Zwischenablage ist leer.');
+                    return;
+                }
+                
+                // Versuch JSON aus Text zu extrahieren (falls KI Markdown ```json nutzt)
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) {
+                    alert('Kein gültiges JSON-Format in der Zwischenablage gefunden.');
+                    return;
+                }
+
+                const data = JSON.parse(jsonMatch[0]);
+
+                populateDropdowns();
+
+                if (data.name) document.getElementById('w-name').value = data.name;
+                
+                if (data.type) {
+                    let typeSel = document.getElementById('w-type');
+                    // Falls Weinart neu ist, automatisch hinzufügen
+                    if (!db.settings.types.includes(data.type)) {
+                        db.settings.types.push(data.type);
+                        saveState();
+                        populateDropdowns();
+                    }
+                    typeSel.value = data.type;
+                }
+
+                if (data.vintage) document.getElementById('w-vintage').value = data.vintage;
+                
+                if (data.location) {
+                    let locSel = document.getElementById('w-location');
+                    // Falls Lagerort neu ist, automatisch hinzufügen
+                    if (!db.settings.locations.includes(data.location)) {
+                        db.settings.locations.push(data.location);
+                        saveState();
+                        populateDropdowns();
+                    }
+                    locSel.value = data.location;
+                }
+
+                if (data.price) document.getElementById('w-price').value = data.price;
+                if (data.qty) document.getElementById('w-qty').value = data.qty;
+                if (data.rating) setRating(parseInt(data.rating) || 0);
+
+                alert('Formular erfolgreich aus der Zwischenablage vorausgefüllt!');
+            } catch (err) {
+                alert('Zugriff auf Zwischenablage fehlgeschlagen oder ungültige Daten.');
+            }
+        }
+
+        function exportJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "bubbleblade_weinkeller_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importJSON(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                db = JSON.parse(evt.target.result);
+                saveState();
+                alert('Backup erfolgreich wiederhergestellt!');
+                switchTab('keller');
+            };
+            reader.readAsText(file);
+        }
+
+        function exportCellarCSV() {
+            let csv = "ID,Name,Weinart,Jahrgang,Lagerort,Anzahl,Preis_Euro,Gesamtwert_Euro,Bewertung,Gemerkt_Probe\n";
+            db.wines.forEach(w => {
+                const total = (w.qty * (w.price || 0)).toFixed(2);
+                csv += `"${w.id}","${w.name}","${w.type}","${w.vintage}","${w.location}",${w.qty},${(w.price||0).toFixed(2)},${total},${w.rating},${w.markedForProbe ? 'Ja' : 'Nein'}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'weinkeller_bestand.csv');
+            a.click();
+        }
+
+        function exportHistoryCSV() {
+            let csv = "Weinname,Jahrgang,Getrunken_Am\n";
+            db.history.forEach(h => {
+                csv += `"${h.wineName}","${h.vintage}","${h.date}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'getrunkene_weine.csv');
+            a.click();
+        }
+
+        populateDropdowns();
+        resetAndRenderWines();
+    </script>
+</body>
+</html>
